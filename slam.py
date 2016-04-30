@@ -14,7 +14,7 @@ import matplotlib.animation as animation
 # SIMULATOR
 
 R = np.array([4, 3, -pi/2]) # robot pose (x, y, th) (makes map anchor point)
-u = np.array([5, 0])        # control signal (distance, rotation)
+u = np.array([0, 0])        # control signal (distance, rotation)
 
 W = np.array([[-18, -80],
               [-69,  36],
@@ -75,20 +75,21 @@ def transform_global(F, p):
     ])
 
     p_w = R.dot(p) + t_F  
-
     x_p, y_p = p
+
     J_f = np.array([
         [1, 0, -y_p * cos(a_F) - x_p * sin(a_F)],
         [0, 1, x_p * cos(a_F) - y_p * sin(a_F)]
     ])
         
     J_p = R
+
     return p_w, J_f, J_p
 
 
 def transform_local(F, p):
-    """ Tronsform point by reference frame.
-    F = [x, y, theta], p = [x, y]
+    """ transforms point [x, y] to frame [x, y, theta] with jacobians with respect
+    to frame and point.
     """
     a = F[2]
     t = F[0:2]
@@ -98,18 +99,19 @@ def transform_local(F, p):
         [sin(a), cos(a)]
     ])
 
-    pf = R.T.dot(p - t)
+    p = R.T.dot(p - t)
 
-    px, py = p
+    p_x, p_y = p
     x, y = t
     
     J_f = np.array([
-        [-cos(a), -sin(a), cos(a) * (py - y) - sin(a) * (px - x)],
-        [sin(a), -cos(a), -cos(a) * (px - x) - sin(a) * (py - y)]
+        [-cos(a), -sin(a), cos(a) * (p_y - y) - sin(a) * (p_x - x)],
+        [sin(a), -cos(a), -cos(a) * (p_x - x) - sin(a) * (p_y - y)]
     ])
+
     J_p = R.T
 
-    return pf, J_f, J_p
+    return p, J_f, J_p
 
 
 def move(r, u, n):
@@ -137,59 +139,76 @@ def move(r, u, n):
     # we transform only x coordinate as vel of u = [vel, angle]
     t, J_f, J_p = transform_global(r, np.array([u[0], 0]))
 
-    J_r = np.vstack([J_f, [0, 0, 1]])
-    J_n = np.vstack([np.vstack([J_p[:, 0], np.zeros([1, 2])]).T, [0, 1]])
+    J_r = np.vstack([
+        J_f,
+        [0, 0, 1]
+    ])
+    J_n = np.vstack([
+        np.vstack([J_p[:, 0], np.zeros([1, 2])]).T,
+        [0, 1]
+    ])
 
     return np.r_[t, a], J_r, J_n
 
 
-def scan(w):
-    """ 2D point to polar measure with jacobian to w
+def scan(p):
+    """ 2D point to polar measure with jacobian to p
     """
-    x, y = w
+    x, y = p
 
-    p = sqrt(x**2 + y**2)
+    d = sqrt(x**2 + y**2)
     fi = atan2(y, x)
     
-    J_w = np.array([
-        [x / sqrt(x**2 + y**2), y / sqrt(x**2 + y**2)],
-        [-y / (x**2*(y**2 / x**2 + 1)), 1 / (x*(y**2 / x**2 + 1))]
+    J_p = np.array([
+        [x / sqrt(x**2 + y**2),          y / sqrt(x**2 + y**2)],
+        [-y / (x**2*(y**2 / x**2 + 1)),  1 / (x*(y**2 / x**2 + 1))]
     ])
-    return np.array([p, fi]), J_w
+
+    return np.array([d, fi]), J_p
 
 
-def observe(r, w, v=np.zeros(2)):
-    """ Returns measurement! in polar coordinates [p, fi] to point w
+def inv_scan(y):
+    """ polar measure p to 2D point [x, y] with jacobian to p
     """
-    y, J_w = scan(transform_local(r, w)[0])
-    return y + v, J_w
+    d, fi = y
 
-
-def inv_scan(w):
-    """ polar measure w to 2D point [x, y] with jacobian to w
-    """
-    p, fi = w
+    p = np.array([d*cos(fi), d*sin(fi)])
 
     J_y = np.array([
-        [cos(fi), -p*sin(fi)],
-        [sin(fi), p*cos(fi)]
+        [cos(fi), -d*sin(fi)],
+        [sin(fi), d*cos(fi)]
     ])
 
-    return np.array([p*cos(fi), p*sin(fi)]), J_y
+    return p, J_y
 
 
-def inv_observe(r, w):
-    y, J_y = inv_scan(w)
-    p, J_f, J_p = transform_global(r, y)
+def observe(r, p, v=np.zeros(2)):
+    """ Returns measurement! in polar coordinates [d, fi] to point p
+    """
+    p, J_r, J_p = transform_local(r, p)
+    y, J_y = scan(p)            # take measurement to robot-local point
 
-    J_chained = J_p.dot(J_y)
+    J_yr = J_y.dot(J_r)            # chain with robot frame
+    J_yp = J_y.dot(J_p)            # chain with point
+
+    return y + v, J_yr, J_yp
+
+
+def inv_observe(r, y):
+    """ local measurement to global point
+    """
+    p_local, J_y = inv_scan(y)
+    p, J_r, J_p = transform_global(r, p_local)
+
+    J_py = J_p.dot(J_y)         # chain rule
     
-    return p, J_f, J_chained, 
+    return p, J_r, J_py, 
+
     
 R_res = []
-Y_polar = []
 
-for t in np.arange(1, 2):
+for t in np.arange(1, 3):
+    print("t:", t)
 
     # simulate robot move
     n = q * np.random.random(2) # motion control noise
@@ -200,15 +219,14 @@ for t in np.arange(1, 2):
 
     # b. observation (with sensor from -pi/4 to pi/4 angle)
 
-    Y_polar = []                # reset to see last observation
+
     for i in range(N):
         v_m = np.random.random(2) * 0.05 # measurement noise
-        y_m, _ = observe(R, W[:, i], v_m) # +/-2pi wide measurements with noise
-
+        y, _, _ = observe(R, W[:, i], v_m) # +/-2pi wide measurements with noise
         # simulate sensor range and angle
-        p, fi = y_m
+        p, fi = y
         if p < 100 and fi > -pi/4 and fi < pi/4:
-            Y_polar.append(y_m)           # measurements
+            Y[:, i] = y         # measurements at time t
 
 
     # Estimator (EKF)
@@ -220,52 +238,56 @@ for t in np.arange(1, 2):
     # use m instead : where m = landmarks[landmarks!=0)].T
 
     x[r], J_r, J_n = move(x[r], u, np.zeros(2)) # plan robot position given control u
+    print("move J_r", J_r.shape)
     P[r, :] = J_r.dot(P[r, :])
     P[:, r] = P[r, :].T         # arba J_r.dot(P[:, r])
     P[r, r] = (J_r.dot(P[r, r]).dot(J_r.T) + J_n.dot(Q).dot(J_n.T))[r, r]
-    
+
+
     # c) known landmark correction
+    print("-- known landmark correction")
 
-    # lids = np.where(landmarks[0, :])[0] # find all registered landmark indices
-    # for l in lids:
-    #     l_i = np.where(landmarks[0, :]==0)[0] # find free landmark slot indices
-    #     m_i = np.where(mapspace==False)[0][:2] # find first 2 free indeces in mapspace
-    #     mapspace[m_i] = True    # mark landmarks occupied for x
-    #     landmarks[:, i] = l     # landmark indexes from mapsapce
+    lids = np.where(landmarks[0, :])[0] # find all landmarks indices in landmarks
+    print ("landmarks", landmarks)
+    print ("lids", lids)
 
-    #     x[l] = Y[:, i]          # invObserve(x[r], Yi)
-    #     print l
+    for i in lids:
+        l = landmarks[:, i]     # get landmark indeces in x
+        print("l:", l)
+        e, J_r, J_y = observe(x[r], x[l])  # get measurement
+        print (e)
+        rl = np.hstack([r, l])
 
 
-    # d) new landmark initialization
+    # d) new landmark initialization (prediction)
+    print("-- landmark initialization")
 
-    for y_m in Y_polar:
-
+    for y in Y.T:
         lids = np.where(landmarks[0, :]==0)[0] # find free slots for landmark
 
-        if all(y_m!=0) and any(lids):
+        if all(y!=0) and any(lids):
             i = lids[np.random.randint(lids.size)] # find random slot for landmark
-            l = np.where(mapspace==False)[0][:2] # find 
+            l = np.where(mapspace==False)[0][:2]   # find 
 
             mapspace[l] = True          # reserve landmark positions in mapspace
             landmarks[:, i] = l         # store landmark pointers to x
-        
-            x[l], J_r, J_y = inv_observe(R, y_m) # global landmark pose
-            P[l, :] = J_r.dot(P[r, :])
-            P[:, l] = P[l, :].T
-            #P[l, l] = J_r.dot(P[r,r]).dot(J_r.T) + J_y.dot(S).dot(J_y.T)
 
-            Y[:, i] = x[l]
+            x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
+            # P[l, :] = J_r.dot(P[r, :])
+            # P[:, l] = P[l, :].T
+            # P[l, l] = J_r.dot(P[r, r]).dot(J_r.T) + J_y.dot(S).dot(J_y.T)
+            #J_r.dot(P[r, r]).dot(J_r.T) + J_y.dot(S).dot(J_y.T)
 
             # update covariances P
 
-    print "AFTER INIT"
-    print landmarks
-    print mapspace
-    print x[np.where(mapspace==True)]
+
+    # print ("AFTER INIT")
+    # print (landmarks)
+    # print (mapspace)
+    # print (x[np.where(mapspace==True)])
+
 
 R_res = np.array(R_res)
-Y_polar = np.array(Y_polar)
 
 
 def plots():
@@ -277,11 +299,12 @@ def plots():
     plt.ylim([-120, 120])
     plt.plot(R_res[:, 0], R_res[:, 1], 'o',
              W[0, :], W[1, :], '*',
-             Y[0, :], Y[1, :], 'r+') # also plots Y zeros
+             # Y[0, :], Y[1, :], 'r+'  # also plots Y zeros
+    )
 
     plt.subplot(2, 1, 2, projection='polar')
     plt.grid(True)
-    plt.polar(Y_polar[:, 1], Y_polar[:, 0], 'g.',
+    plt.polar(Y[1, :], Y[0, :], 'g.',
               [0, -pi/4], [0, 100], 'r-',
               [0, pi/4], [0, 100], 'r-')
 
@@ -290,7 +313,7 @@ def plots():
     plt.colorbar()
 
     plt.show()
-plots()
+#plots()
 
 
 def animations():
