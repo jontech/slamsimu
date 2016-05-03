@@ -164,6 +164,7 @@ def correction(i, r, x, P, Y, S, landmarks):
 
     y, J_r, J_y = observe(x[r], x[l]) # get measurement y = h(x)
     E_rl = np.hstack([J_r, J_y])               # expectation jacobian
+    # import pdb;pdb.set_trace()
     E = E_rl.dot(P[rl[:, None], rl]).dot(E_rl.T)
 
     y_i = Y[:, i]               # take one measurement from set
@@ -175,10 +176,16 @@ def correction(i, r, x, P, Y, S, landmarks):
     z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
     Z = S + E                   # inovation covariance with noise
 
-    # need correction? mahalanobis distance (3 sigma) of probability elipsoid
-    if z.T.dot(np.linalg.inv(Z).dot(z)) < 9:
-        # FIXME
-        K = P[rl[:, None], rl].dot(E_rl).T.dot(np.linalg.inv(Z)) # Kalman gain P*H'*Z^-1
+    # always correct
+    # TODO mahalanobis distance (3 sigma) check
+    # FIXME
+    K = P[rl[:, None], rl].dot(E_rl.T).dot(np.linalg.inv(Z)) # Kalman gain P*H'*Z^-1
+
+    # update
+    # x = x + K * z;
+    # P = P - K * Z * K';
+
+    return x, P
 
 
 def initialization(y, x, R, S, r, P, landmarks, mapspace):
