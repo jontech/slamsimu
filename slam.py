@@ -178,7 +178,7 @@ def correction(i, r, x, P, Y, S, landmarks):
     # need correction? mahalanobis distance (3 sigma) of probability elipsoid
     if z.T.dot(np.linalg.inv(Z).dot(z)) < 9:
         # FIXME
-        K = P[rl[:, None], rl].dot(E_rl).T.dot(Z**-1) # Kalman gain P*H'*Z^-1
+        K = P[rl[:, None], rl].dot(E_rl).T.dot(np.linalg.inv(Z)) # Kalman gain P*H'*Z^-1
 
 
 def initialization(y, x, R, S, r, P, landmarks, mapspace):
@@ -243,8 +243,6 @@ def simulation():
     R_res = []
 
     for t in np.arange(1, 100):   # main loop
-        print("t:", t)
-
         # simulate robot move
         n = q * np.random.random(2) # motion control noise
 
