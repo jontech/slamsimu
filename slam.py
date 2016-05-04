@@ -159,12 +159,14 @@ def inv_observe(r, y):
 def correction(i, r, x, P, Y, S, landmarks):
     """ SLAM
     """
+    x = x.copy()
+    P = P.copy()
+
     l = landmarks[:, i]               # landmark pointer to x
     rl = np.hstack([r, l])                     # robot and known landmark in x
 
     y, J_r, J_y = observe(x[r], x[l]) # get measurement y = h(x)
     E_rl = np.hstack([J_r, J_y])               # expectation jacobian
-    # import pdb;pdb.set_trace()
     E = E_rl.dot(P[rl[:, None], rl]).dot(E_rl.T)
 
     y_i = Y[:, i]               # take one measurement from set
@@ -176,21 +178,35 @@ def correction(i, r, x, P, Y, S, landmarks):
     z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
     Z = S + E                   # inovation covariance with noise
 
-    # always correct
-    # TODO mahalanobis distance (3 sigma) check
-    # FIXME
     K = P[rl[:, None], rl].dot(E_rl.T).dot(np.linalg.inv(Z)) # Kalman gain P*H'*Z^-1
 
     # update
-    # x = x + K * z;
-    # P = P - K * Z * K';
+    x[rl] = x[rl] + K.dot(z)
+    P[rl[:, None], rl] = P[rl[:, None], rl] - K.dot(K.T)
 
     return x, P
+
+
+def sensor_sim(R, W, N):
+    Y = np.zeros([2, N])      # measurements of all landmarks in W at time
+    for i in range(N):
+        v_m = np.random.random(2) * 0.05      # measurement noise
+        y, _, _ = observe(R, W[:, i], v_m)    # +/-2pi wide measurements with noise
+        # simulate sensor range and angle
+        p, fi = y
+        if p < 100 and fi > -pi/4 and fi < pi/4:
+            Y[:, i] = y     # measurements at time t
+    return Y
 
 
 def initialization(y, x, R, S, r, P, landmarks, mapspace):
     """ SLAM new landmark initialization
     """
+    x = x.copy()
+    P = P.copy()
+    mapspace = mapspace.copy()
+    landmarks = landmarks.copy()
+
     lids = np.where(landmarks[0, :]==0)[0]       # find free slots for landmark
 
     if all(y!=0) and any(lids):
@@ -208,86 +224,6 @@ def initialization(y, x, R, S, r, P, landmarks, mapspace):
 
     return x, P, landmarks, mapspace
 
-
-
-def simulation():
-    R = np.array([4, 3, -pi/2]) # robot pose (x, y, th) (makes map anchor point)
-    u = np.array([0, 0])        # control signal (distance, rotation)
-
-    W = np.array([
-        [-18, -69, -26, -81,   5,  19,   3, -35, -57, -73],
-        [-80,  36,  41,  47, -58, -77, -90, -80, -91,  57]
-    ])
-
-    N = W.shape[1]
-
-    Y = np.zeros([2, N])      # measurements of all landmarks in W at time
-    
-    x = np.zeros([R.size + W.size]) # state vector as map means
-    P = np.zeros([x.size]*2)        # state covariance
-
-    # system noise: Gaussian {0, Q}
-    q = np.array([.01, .01])    # aplitute or standart deviation
-    Q = np.diag(q**2)           # noise covarinace
-
-    # measurement noise: Gaussian {0, S}
-    s = np.array([.1, 1*pi/180]) # noise standart deviation
-    S = np.diag(s**2)            # noise covarince
-
-    # State index management
-    mapspace = np.zeros([x.size], dtype=bool) # fill with false
-
-    # Observed landmarks pointers to mapspace
-    landmarks = np.zeros([2, N], dtype=int)
-
-    # Place robot in map
-    r = np.where(mapspace==False)[0][0:R.size] # takes first 3 positions
-    mapspace[r] = True                         # block map positions
- 
-    # initialize robot states
-    x[r] = R
-    P[r,r] = 0                                            # initialize robot covariance
-    R_res = []
-
-    for t in np.arange(1, 100):   # main loop
-        # simulate robot move
-        n = q * np.random.random(2) # motion control noise
-
-        R, _, _ = move(R, u, np.zeros(2)) # simulate move (no perturbation)   
-        R_res.append(R) 
-
-        # b. observation (with sensor from -pi/4 to pi/4 angle)
-        for i in range(N):
-            v_m = np.random.random(2) * 0.05      # measurement noise
-            y, _, _ = observe(R, W[:, i], v_m)    # +/-2pi wide measurements with noise
-            # simulate sensor range and angle
-            p, fi = y
-            if p < 100 and fi > -pi/4 and fi < pi/4:
-                Y[:, i] = y     # measurements at time t
-
-        # Estimator (EKF)
-
-        # takes all landmark-robot variances (suboptimal)
-        # use m instead : where m = landmarks[landmarks!=0)].T
-        x[r], J_r, J_n = move(x[r], u, np.zeros(2))
-        P[r, :] = J_r.dot(P[r, :])
-        P[:, r] = P[r, :].T     # arba J_r.dot(P[:, r])
-        P[r[:, None], r] = J_r.dot(P[r, r]).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
-
-        # find all landmarks indices in landmarks
-        # lids -> landmarks -> x
-        for lid in np.where(landmarks[0, :])[0]:
-            correction(lid, r, x, P, Y, S, landmarks)
-
-        for y in Y.T:
-            x, P, landmarks, mapspace = initialization(y, x, R, S, r, P, landmarks, mapspace)
-
-        # print ("AFTER INIT")
-        # print (landmarks)
-        # print (mapspace)
-        # print (x[np.where(mapspace==True)])
-        
-    plots(R_res, W, Y, P)
 
 def plots(R_res, W, Y, P):
     R_res = np.array(R_res)
@@ -341,4 +277,76 @@ def animations(R_res):
     ani.save('/tmp/Animation.gif',writer='imagemagick',fps=5);
 
 
-simulation()
+def main():
+    R = np.array([4, 3, -pi/2]) # robot pose (x, y, th) (makes map anchor point)
+    u = np.array([2, 0])        # control signal (distance, rotation)
+
+    W = np.array([
+        [-18, -69, -26, -81,   5,  19,   3, -35, -57, -73],
+        [-80,  36,  41,  47, -58, -77, -90, -80, -91,  57]
+    ])
+
+    N = W.shape[1]
+
+    x = np.zeros([R.size + W.size]) # state vector as map means
+    P = np.zeros([x.size]*2)        # state covariance
+
+    # system noise: Gaussian {0, Q}
+    q = np.array([.01, .01])    # aplitute or standart deviation
+    Q = np.diag(q**2)           # noise covarinace
+
+    # measurement noise: Gaussian {0, S}
+    s = np.array([.1, 1*pi/180]) # noise standart deviation
+    S = np.diag(s**2)            # noise covarince
+
+    # State index management
+    mapspace = np.zeros([x.size], dtype=bool) # fill with false
+
+    # Observed landmarks pointers to mapspace
+    landmarks = np.zeros([2, N], dtype=int)
+
+    # Place robot in map
+    r = np.where(mapspace==False)[0][0:R.size] # takes first 3 positions
+    mapspace[r] = True                         # block map positions
+ 
+    # initialize robot states
+    x[r] = R
+    P[r,r] = 0                                            # initialize robot covariance
+    R_res = []
+
+    for t in np.arange(1, 50):   # main loop
+        # simulate robot move
+        n = q * np.random.random(2) # motion control noise
+
+        R, _, _ = move(R, u, np.zeros(2)) # simulate move (no perturbation)   
+        R_res.append(R) 
+
+        # b. observation (with sensor from -pi/4 to pi/4 angle)
+        Y = sensor_sim(R, W, N)
+
+        # Estimator (EKF)
+
+        # takes all landmark-robot variances (suboptimal)
+        x[r], J_r, J_n = move(x[r], u, np.zeros(2))
+        P[r, :] = J_r.dot(P[r, :])
+        P[:, r] = P[r, :].T     # arba J_r.dot(P[:, r])
+        P[r[:, None], r] = J_r.dot(P[r, r]).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
+
+        # find all landmarks indices in landmarks
+        # lids -> landmarks -> x
+        print("t:", t)
+        for lid in np.where(landmarks[0, :])[0]:
+            x, P  = correction(lid, r, x, P, Y, S, landmarks)
+
+        for y in Y.T:
+            x, P, landmarks, mapspace = initialization(y, x, R, S, r, P, landmarks, mapspace)
+
+        # print ("AFTER INIT")
+        # print (landmarks)
+        # print (mapspace)
+        # print (x[np.where(mapspace==True)])
+        
+    plots(R_res, W, Y, P)
+
+
+main()
