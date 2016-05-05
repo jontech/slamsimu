@@ -10,6 +10,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
 
+from worlds import cloister
+
 
 def transform_global(F, p):
     """ transform point from frame F to global frame.
@@ -167,22 +169,21 @@ def sensor_sim(R, W, N, v_m):
     return Y
 
 
-def plots(R_res, W, Y, P):
+def plots(R_res, W, L, Y, P):
     R_res = np.array(R_res)
     plt.figure(1)
     
     plt.subplot(2, 1, 1)
     plt.grid(True)
-    plt.xlim([-120, 120])
-    plt.ylim([-120, 120])
     plt.plot(R_res[:, 0], R_res[:, 1], 'o',
-             W[0, :], W[1, :], '*')
+             W[0, :], W[1, :], '*',
+             L[:, 0], L[:, 1], '.')
 
     plt.subplot(2, 1, 2, projection='polar')
     plt.grid(True)
     plt.polar(Y[1, :], Y[0, :], 'g.',
-              [0, -pi/4], [0, 100], 'r-',
-              [0, pi/4], [0, 100], 'r-')
+              [0, -pi/4], [0, 300], 'r-',
+              [0, pi/4], [0, 300], 'r-')
     
     plt.figure(2)
     plt.pcolor(P)
@@ -220,13 +221,15 @@ def animations(R_res):
 
 
 def main():
-    R = np.array([4, 3, -pi/2])  # robot pose (x, y, th) (makes map anchor point)
+    R = np.array([100, 100, 0])  # robot pose (x, y, th) (makes map anchor point)
     u = np.array([0, 0])        # control signal (distance, rotation)
 
-    W = np.array([
-        [-18, -69, -26, -81,   5,  19,   3, -35, -57, -73],
-        [-80,  36,  41,  47, -58, -77, -90, -80, -91,  57]
-    ])
+    # W = np.array([
+    #     [-18, -69, -26, -81,   5,  19,   3, -35, -57, -73],
+    #     [-80,  36,  41,  47, -58, -77, -90, -80, -91,  57]
+    # ])
+    
+    W = cloister.T
 
     N = W.shape[1]
 
@@ -261,14 +264,14 @@ def main():
     for t in np.arange(1, 100):      # main loop
         # simulate robot move
         n = q * np.random.random(2) # motion control noise
-        R, _, _ = move(R, u, n)
+        R, _, _ = move(R, u, np.array([0, 0]))
         R_res.append(R) 
 
         # b. observation ALL landmarks in world
         # TODO landmark accosiation
         for i in range(N):
             v_m = s * np.random.random(2) # measurement noise
-            Y[:, i], _, _ = observe(R, W[:, i], v_m)
+            Y[:, i], _, _ = observe(R, W[:, i], np.array([0, 0]))
 
         print(t)
         # Estimator (EKF)
@@ -325,11 +328,8 @@ def main():
                 P[:, l] = P[l, :].T
                 P[l[:, np.newaxis], l] = J_r.dot(P[r[:, np.newaxis], r]).dot(J_r.T) + J_y.dot(S).dot(J_y.T)
 
-        print("UPDATED LANDMARKS")
-        print(landmarks)
-        print(x[landmarks[:, np.where(landmarks[0, :]!=0)[0]]].T)
-
-    plots(R_res, W, Y, P)
+    x_lms = x[landmarks[:, np.where(landmarks[0, :]!=0)[0]]].T # landmark value array
+    plots(R_res, W, x_lms, Y, P)
 
 
 main()
