@@ -149,19 +149,6 @@ def inv_observe(r, y):
     return p, J_r, J_y, 
 
 
-def sensor_sim(R, W, N, v_m):
-    # measurements of all landmarks in W at time
-    Y = np.zeros([2, N])      
-    for i in range(N):
-        # +/-2pi wide measurements with noise
-        y, _, _ = observe(R, W[:, i], v_m)
-        # simulate sensor range and angle
-        p, fi = y
-        if p < 100 and fi > -pi/4 and fi < pi/4:
-            Y[:, i] = y     # measurements at time t
-    return Y
-
-
 def main():
     R = np.array([100, 100, 0])  # robot pose (x, y, th)
     u = np.array([0, 0])        # control signal (distance, rotation)
