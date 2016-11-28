@@ -181,7 +181,7 @@ P[r,r] = 0                      # initialize robot covariance
 R_res = []                      # robot positions for plots
 
 # main loop
-for t in np.arange(1, 100):
+for t in np.arange(1, 10):
 
     # simulate robot move
     n = q * np.random.random(2) # motion control noise
@@ -231,13 +231,13 @@ for t in np.arange(1, 100):
         try:
             K = P[rl[:, np.newaxis], rl].dot(J_ry.T).dot(np.linalg.inv(Z))
         except np.linalg.linalg.LinAlgError as e:
-            print("landmarks K update got {}, continue..".format(e))
+            print("landmarks K update fail: {}, Z={}".format(e, Z))
             continue
-
-        # posteriori update
-        x[rl] = x[rl] + K.dot(z)
-        P[rl[:, np.newaxis], rl] = P[rl[:, np.newaxis], rl] - K.dot(
-            Z).dot(K.T)
+        else:
+            # posteriori update
+            x[rl] = x[rl] + K.dot(z)
+            P[rl[:, np.newaxis], rl] = P[rl[:, np.newaxis], rl] - K.dot(
+                Z).dot(K.T)
 
 
     # SLAM new landmarks
