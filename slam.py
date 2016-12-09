@@ -58,11 +58,11 @@ def transform_local(F, p):
     return p, J_f, J_p
 
 
-def move(r, u, n):
+def move(r, u=np.array([0, 0]), n=np.zeros(2)):
     """ Move robot using control.
     r - current position
-    u - control
-    n - motion noise
+    u - control, default not moving
+    n - motion noise, default no noise
 
     Returns updated robot position applying control
     u = [vel, angle] to robot
@@ -217,33 +217,34 @@ def landmark_creation(Y, landmarks, mapspace, R, P, x, r, S):
 
 
 def run(steps):
-    R = np.array([100, 30, 0])      # robot pose (x, y, th)
-    u = np.array([4, 0])          # control signal (step, rotation)
+    R = np.array([100, 30, 0])    # initial robot pose (x, y, th)
     W = cloister.T
-    N = W.shape[1]
+
     x = np.zeros([R.size + W.size]) # state vector as map means
     P = np.zeros([x.size]*2)        # state covariance
+
     # system noise: Gaussian {0, Q}
     q = np.array([.01, .01])        # noise standart deviation
     Q = np.diag(q**2)               # noise covarinace ??
-    # measurement noise: Gaussian {0, S}
-    
+
     # State index management
     mapspace = np.zeros([x.size], dtype=bool) # fill with false
+
     # Observed landmarks pointers to mapspace
-    landmarks = np.zeros([2, N], dtype=int)
-    # Place robot in map
-    r = np.where(mapspace==False)[0][0:R.size] # takes first 3 positions
-    mapspace[r] = True                         # block map positions
+    landmarks = np.zeros([2, W.shape[1]], dtype=int)
+
+    r = np.where(mapspace==False)[0][0:R.size] # Place robot in map
+    mapspace[r] = True                    # block robot map positions
+
     # initialize robot states
     x[r] = R
-    P[r,r] = 0                      # initialize robot covariance
-    R_res = []                      # robot positions for plots
+    P[r,r] = 0                    # initialize robot covariance
+    R_res = []                    # robot positions for plots
      
     for t in np.arange(1, steps):
      
         # simulate robot move
-        R, _, _ = move(R, u, q*np.random.random(2))
+        R, _, _ = move(R, u=np.array([4, 0]), n=q*np.random.random(2))
         R_res.append(R)
      
         Y, S = observe_landmarks(W, R)
@@ -252,7 +253,7 @@ def run(steps):
      
         # SLAM update robot position
         # takes all landmark-robot variances (suboptimal)
-        x[r], J_r, J_n = move(x[r], u, np.zeros(2))
+        x[r], J_r, J_n = move(x[r], u=np.array([4, 0]))
         P[r, :] = J_r.dot(P[r, :])
         P[:, r] = P[r, :].T
         P[r[:, np.newaxis], r] = J_r.dot(P[r, r]).dot(J_r.T) + J_n.dot(
