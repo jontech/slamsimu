@@ -150,20 +150,31 @@ def inv_observe(r, y):
     return p, J_r, J_y, 
 
 
+def observe_landmarks(W, R):
+    """observation ALL landmarks in world, return messurements Y"""
+    # TODO landmark asociation (same landmark filter)
+    N = W.shape[1]               # world size
+    s = np.array([.1, 1*pi/180]) # noise standart deviation
+    S = np.diag(s**2)            # noise covarince
+    Y = np.zeros([2, N])         # init observation measurements 
+    for i in range(N):
+        v_m = s * np.random.random(2) # measurement noise
+        Y[:, i], _, _ = observe(R, W[:, i], v_m)
+    return Y, S
+
+
 def run(steps):
-    R = np.array([100, 30, 0])      # robot initial pose (x, y, th)
+    R = np.array([100, 30, 0])      # robot pose (x, y, th)
     u = np.array([4, 0])          # control signal (step, rotation)
     W = cloister.T
     N = W.shape[1]
     x = np.zeros([R.size + W.size]) # state vector as map means
     P = np.zeros([x.size]*2)        # state covariance
-    Y = np.zeros([2, N])            # observation measurements 
     # system noise: Gaussian {0, Q}
     q = np.array([.01, .01])        # noise standart deviation
     Q = np.diag(q**2)               # noise covarinace ??
     # measurement noise: Gaussian {0, S}
-    s = np.array([.1, 1*pi/180])              # noise standart deviation
-    S = np.diag(s**2)                         # noise covarince
+    
     # State index management
     mapspace = np.zeros([x.size], dtype=bool) # fill with false
     # Observed landmarks pointers to mapspace
@@ -183,12 +194,8 @@ def run(steps):
         R, _, _ = move(R, u, n)
         R_res.append(R)
      
-        # observation ALL landmarks in world
-        # TODO landmark asociation (same landmark?)
-        for i in range(N):
-            v_m = s * np.random.random(2) # measurement noise
-            Y[:, i], _, _ = observe(R, W[:, i], v_m)
-     
+        Y, S = observe_landmarks(W, R)
+
         # Estimator (EKF)
      
         # SLAM update robot position
