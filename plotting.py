@@ -37,7 +37,7 @@ def plot_covariance(self, P):
     plt.colorbar()
     plt.show()
 
-def plots(R_res, W, L, Y):
+def plots(R_res, W, L, Y, title="N/A"):
     fig1 = plt.figure(1)
     ax = fig1.add_subplot(1, 1, 1)
     ax.grid(True)
@@ -49,6 +49,8 @@ def plots(R_res, W, L, Y):
 
     for i, l in enumerate(L):
         ax.annotate(i, xy=l)
+
+    ax.set_title(title)
 
     # ax = fig1.add_subplot(2, 1, 2, projection='polar')
     # ax.grid(True)

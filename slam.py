@@ -150,9 +150,7 @@ def inv_observe(r, y):
     return p, J_r, J_y, 
 
 
-# MAIN
-
-def slam(steps):
+def run(steps):
     R = np.array([100, 30, 0])      # robot initial pose (x, y, th)
     u = np.array([4, 0])          # control signal (step, rotation)
     W = cloister.T
@@ -178,7 +176,6 @@ def slam(steps):
     P[r,r] = 0                      # initialize robot covariance
     R_res = []                      # robot positions for plots
      
-    # main loop
     for t in np.arange(1, steps):
      
         # simulate robot move
@@ -227,7 +224,7 @@ def slam(steps):
             # when P (variability) large (low confidence) K also large
             # when robot static state P and K should go to 0
             K = P[rl[:, np.newaxis], rl].dot(J_ry.T).dot(np.linalg.inv(Z))
-
+  
             # posteriori update
             x[rl] = x[rl] + K.dot(z)
             P[rl[:, np.newaxis], rl] = P[rl[:, np.newaxis], rl] - K.dot(
@@ -251,6 +248,6 @@ def slam(steps):
                 P[l[:, np.newaxis], l] = J_r.dot(
                     P[r[:, np.newaxis], r]).dot(
                         J_r.T) + J_y.dot(S).dot(J_y.T)
-
+  
     x_lms = x[landmarks[:, np.where(landmarks[0, :]!=0)[0]]].T
     return np.array(R_res), W, x_lms, Y
