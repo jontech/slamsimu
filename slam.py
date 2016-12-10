@@ -12,22 +12,17 @@ def transform_global(F, p):
     """
     a_F = F[2]
     t_F = F[0:2]
-
     R = np.array([
         [cos(a_F), -sin(a_F)], # rotation matrix
         [sin(a_F), cos(a_F)]
     ])
-
     p_w = R.dot(p) + t_F  
     x_p, y_p = p
-
     J_f = np.array([
         [1, 0, -y_p*cos(a_F) - x_p*sin(a_F)],
         [0, 1, x_p*cos(a_F) - y_p*sin(a_F)]
     ])
-        
     J_p = R
-
     return p_w, J_f, J_p
 
 
@@ -37,24 +32,18 @@ def transform_local(F, p):
     """
     a = F[2]
     t = F[0:2]
-
     R = np.array([
         [cos(a), -sin(a)],                             # rotation matrix
         [sin(a), cos(a)]
     ])
-
     p = R.T.dot(p - t)
-
     p_x, p_y = p
     x, y = t
-    
     J_f = np.array([
         [-cos(a), -sin(a), cos(a) * (p_y - y) - sin(a) * (p_x - x)],
         [sin(a), -cos(a), -cos(a) * (p_x - x) - sin(a) * (p_y - y)]
     ])
-
     J_p = R.T
-
     return p, J_f, J_p
 
 
@@ -75,18 +64,14 @@ def move(r, u=np.array([0, 0]), n=np.zeros(2)):
     """
     a = r[2]
     u = u + n
-
     # change robot rotation a
     a = a + u[1]
-
     # negative angles?
     a = a - 2*pi if a > pi else a
     a = a + 2*pi if a < -pi else a
-
     # position increment from control signal in global frame,
     # we transform only x coordinate as vel of u = [vel, angle]
     t, J_f, J_p = transform_global(r, np.array([u[0], 0]))
-
     J_r = np.vstack([
         J_f,
         [0, 0, 1]
@@ -95,23 +80,20 @@ def move(r, u=np.array([0, 0]), n=np.zeros(2)):
         np.vstack([J_p[:, 0], np.zeros([1, 2])]).T,
         [0, 1]
     ])
-
     return np.hstack([t, a]), J_r, J_n
 
 
 def scan(p):
     """ 2D point to polar measure with jacobian to p
+    returns (distance, angle), jacobian
     """
     x, y = p
-
     d = sqrt(x**2 + y**2)
     fi = atan2(y, x)
-    
     J_p = np.array([
         [x / sqrt(x**2 + y**2),          y / sqrt(x**2 + y**2)],
         [-y / (x**2*(y**2 / x**2 + 1)),  1 / (x*(y**2 / x**2 + 1))]
     ])
-
     return np.array([d, fi]), J_p
 
 
@@ -119,14 +101,11 @@ def inv_scan(y):
     """ polar measure p to 2D point [x, y] with jacobian to p
     """
     d, fi = y
-
     p = np.array([d*cos(fi), d*sin(fi)])
-
     J_y = np.array([
         [cos(fi), -d*sin(fi)],
         [sin(fi), d*cos(fi)]
     ])
-
     return p, J_y
 
 
@@ -135,10 +114,8 @@ def observe(r, p, v=np.zeros(2)):
     """
     p, J_r, J_p = transform_local(r, p)
     y, J_y = scan(p)           # take measurement to robot-local point
-
     J_yr = J_y.dot(J_r)         # chain with robot frame
     J_yp = J_y.dot(J_p)         # chain with point
-
     return y + v, J_yr, J_yp
 
 
@@ -147,9 +124,7 @@ def inv_observe(r, y):
     """
     p_local, J_y = inv_scan(y)
     p, J_r, J_p = transform_global(r, p_local)
-
     J_y = J_p.dot(J_y)          # chain rule
-
     return p, J_r, J_y, 
 
 
@@ -176,6 +151,7 @@ def landmark_correction(lids, landmarks, r, x, P, Y, S):
             
         # meassurement inovation z with covariance Z
         z = Y[:, i] - y
+        
         # angle correction
         z[1] = z[1] - 2*pi if z[1] > pi else z[1]
         z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
