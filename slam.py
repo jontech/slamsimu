@@ -188,6 +188,15 @@ def landmark_creation(y, landmarks, mapspace, R, P, x, r, S):
     return x, P
 
 
+def update_robot(r, x, P, Q, x_r, J_r, J_n):
+    x[r] = x_r
+    P[r, :] = J_r.dot(P[r, :])
+    P[:, r] = P[r, :].T
+    P[r[:, np.newaxis], r] = J_r.dot(
+        P[r, r]).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
+    return x, P
+
+
 def run(steps):
     R = np.array([100, 30, 0])    # initial robot pose (x, y, th)
     W = cloister.T
@@ -220,22 +229,22 @@ def run(steps):
         R_res.append(R)
      
         Y, S = observe_landmarks(W, R)
+
         # Estimator (EKF)
      
-        # SLAM update robot position
-        # takes all landmark-robot variances (suboptimal)
-        x[r], J_r, J_n = move(x[r], u=np.array([4, 0]))
-        P[r, :] = J_r.dot(P[r, :])
-        P[:, r] = P[r, :].T
-        P[r[:, np.newaxis], r] = J_r.dot(P[r, r]).dot(J_r.T) + J_n.dot(
-            Q).dot(J_n.T)
-     
+        # moves robot and update [x P]
+        x_r, J_r, J_n = move(x[r], u=np.array([4, 0]))
+        x, P = update_robot(r, x, P, Q, x_r, J_r, J_n)
+
+        # takess all landmark-robot variances (suboptimal)
         lids = np.where(landmarks[0, :])[0] # lids -> landmarks -> x
 
+        # landmark creation
         for i in lids:
             l = landmarks[:, i]      # landmark pointer to x
             x, P = landmark_correction(l, i, r, x, P, Y, S)
 
+        # existing landmark update
         for y in Y.T:
             x, P = landmark_creation(y, landmarks, mapspace, R, P, x, r, S)
 
