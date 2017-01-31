@@ -168,24 +168,23 @@ def landmark_correction(l, l_i, r, x, P, Y, S):
     return x, P
 
 
-def landmark_creation(Y, landmarks, mapspace, R, P, x, r, S):
-    for y in Y.T:
-        # find free slots for landmark
-        lids = np.where(landmarks[0, :]==0)[0] 
-        if all(y!=0) and any(lids):
-            # find random slot for landmark
-            i = lids[np.random.randint(lids.size)] 
-            l = np.where(mapspace==False)[0][:2]
+def landmark_creation(y, landmarks, mapspace, R, P, x, r, S):
+    # find free slots for landmark
+    lids = np.where(landmarks[0, :]==0)[0] 
+    if all(y!=0) and any(lids):
+        # find random slot for landmark
+        i = lids[np.random.randint(lids.size)] 
+        l = np.where(mapspace==False)[0][:2]
  
-            mapspace[l] = True  # reserve landmark in mapspace
-            landmarks[:, i] = l # store landmark pointers to x
+        mapspace[l] = True  # reserve landmark in mapspace
+        landmarks[:, i] = l # store landmark pointers to x
  
-            x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
-            P[l, :] = J_r.dot(P[r, :])
-            P[:, l] = P[l, :].T
-            P[l[:, np.newaxis], l] = J_r.dot(
-                P[r[:, np.newaxis], r]).dot(
-                    J_r.T) + J_y.dot(S).dot(J_y.T)
+        x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
+        P[l, :] = J_r.dot(P[r, :])
+        P[:, l] = P[l, :].T
+        P[l[:, np.newaxis], l] = J_r.dot(
+            P[r[:, np.newaxis], r]).dot(
+                J_r.T) + J_y.dot(S).dot(J_y.T)
     return x, P
 
 
@@ -237,7 +236,8 @@ def run(steps):
             l = landmarks[:, i]      # landmark pointer to x
             x, P = landmark_correction(l, i, r, x, P, Y, S)
 
-        x, P = landmark_creation(Y, landmarks, mapspace, R, P, x, r, S)
+        for y in Y.T:
+            x, P = landmark_creation(y, landmarks, mapspace, R, P, x, r, S)
 
     x_lms = x[landmarks[:, np.where(landmarks[0, :]!=0)[0]]].T
     return np.array(R_res), W, x_lms, Y
