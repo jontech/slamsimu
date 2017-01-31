@@ -141,33 +141,30 @@ def observe_landmarks(W, R):
     return Y, S
 
 
-def landmark_correction(lids, landmarks, r, x, P, Y, S):
-    for i in lids:
-        l = landmarks[:, i]      # landmark pointer to x
-        rl = np.hstack([r, l])   # robot and landmark pointer in x
+def landmark_correction(l, l_i, r, x, P, Y, S):
+    rl = np.hstack([r, l])   # robot and landmark pointer in x
     
-        y, J_r, J_y = observe(x[r], x[l]) # measurement y = h(x)
-        J_ry = np.hstack([J_r, J_y])      # expectation jacobian
-            
-        # meassurement inovation z with covariance Z
-        z = Y[:, i] - y
-        
-        # angle correction
-        z[1] = z[1] - 2*pi if z[1] > pi else z[1]
-        z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
-        # inovation covariance with sensor noise
-        Z = J_ry.dot(P[rl[:, np.newaxis], rl]).dot(J_ry.T) + S         
-            
-        # Kalman gain P*H'*Z^-1
-        # when P (variability) large (low confidence) K also large
-        # when robot static state P and K should go to 0
-        K = P[rl[:, np.newaxis], rl].dot(J_ry.T).dot(np.linalg.inv(Z))
-  
-        # posteriori update
-        x[rl] = x[rl] + K.dot(z)
-        P[rl[:, np.newaxis], rl] = P[rl[:, np.newaxis], rl] - K.dot(
-            Z).dot(K.T)
+    y, J_r, J_y = observe(x[r], x[l]) # measurement y = h(x)
+    J_ry = np.hstack([J_r, J_y])      # expectation jacobian
 
+    # meassurement inovation z with covariance Z
+    z = Y[:, l_i] - y
+
+    # angle correction
+    z[1] = z[1] - 2*pi if z[1] > pi else z[1]
+    z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
+
+    # inovation covariance with sensor noise
+    Z = J_ry.dot(P[rl[:, np.newaxis], rl]).dot(J_ry.T) + S         
+
+    # Kalman gain P*H'*Z^-1
+    # when P (variability) large (low confidence) K also large
+    # when robot static state P and K should go to 0
+    K = P[rl[:, np.newaxis], rl].dot(J_ry.T).dot(np.linalg.inv(Z))
+  
+    # posteriori update
+    x[rl] = x[rl] + K.dot(z)
+    P[rl[:, np.newaxis], rl] = P[rl[:, np.newaxis], rl] - K.dot(Z).dot(K.T)
     return x, P
 
 
@@ -224,7 +221,6 @@ def run(steps):
         R_res.append(R)
      
         Y, S = observe_landmarks(W, R)
-
         # Estimator (EKF)
      
         # SLAM update robot position
@@ -236,7 +232,10 @@ def run(steps):
             Q).dot(J_n.T)
      
         lids = np.where(landmarks[0, :])[0] # lids -> landmarks -> x
-        x, P = landmark_correction(lids, landmarks, r, x, P, Y, S)
+
+        for i in lids:
+            l = landmarks[:, i]      # landmark pointer to x
+            x, P = landmark_correction(l, i, r, x, P, Y, S)
 
         x, P = landmark_creation(Y, landmarks, mapspace, R, P, x, r, S)
 
