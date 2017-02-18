@@ -50,7 +50,7 @@ def transform_local(F, p):
 def move(r, u=np.array([0, 0]), n=np.zeros(2)):
     """ Move robot using control.
     r - current position
-    u - control, default not moving
+    u - control (distance, angle in radians), default not moving
     n - motion noise, default no noise
 
     Returns updated robot position applying control
@@ -110,7 +110,8 @@ def inv_scan(y):
 
 
 def observe(r, p, v=np.zeros(2)):
-    """ Returns `measurement` in polar coordinates [d, fi] to point p
+    """ h(x) Returns measurement in polar coordinates [d, fi] to point p.
+    v - meassurement noise
     """
     p, J_r, J_p = transform_local(r, p)
     y, J_y = scan(p)           # take measurement to robot-local point
@@ -144,7 +145,7 @@ def observe_landmarks(W, R):
 def landmark_correction(l, l_i, r, x, P, Y, S):
     rl = np.hstack([r, l])   # robot and landmark pointer in x
     
-    y, J_r, J_y = observe(x[r], x[l]) # measurement y = h(x)
+    y, J_r, J_y = observe(x[r], x[l]) # expectation measurement y = h(x)
     J_ry = np.hstack([J_r, J_y])      # expectation jacobian
 
     # meassurement inovation z with covariance Z
@@ -224,27 +225,27 @@ def run(steps):
      
     for t in np.arange(1, steps):
      
-        # simulate robot move
-        R, _, _ = move(R, u=np.array([4, 0]), n=q*np.random.random(2))
-        R_res.append(R)
-     
+        # Simulation, robot move, observations
+        R, _, _ = move(R, u=np.array([0, 0]), n=q*np.random.random(2))
         Y, S = observe_landmarks(W, R)
 
+        R_res.append(R)
+     
         # Estimator (EKF)
      
         # moves robot and update [x P]
-        x_r, J_r, J_n = move(x[r], u=np.array([4, 0]))
+        x_r, J_r, J_n = move(x[r], u=np.array([0, 0]))
         x, P = update_robot(r, x, P, Q, x_r, J_r, J_n)
 
         # takess all landmark-robot variances (suboptimal)
         lids = np.where(landmarks[0, :])[0] # lids -> landmarks -> x
 
-        # landmark creation
+        # existing landmark correction
         for i in lids:
             l = landmarks[:, i]      # landmark pointer to x
             x, P = landmark_correction(l, i, r, x, P, Y, S)
 
-        # existing landmark update
+        # new landmarks integration
         for y in Y.T:
             x, P = landmark_creation(y, landmarks, mapspace, R, P, x, r, S)
 
