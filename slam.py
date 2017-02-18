@@ -137,8 +137,13 @@ def observe_landmarks(W, R):
     S = np.diag(s**2)            # noise covarince
     Y = np.zeros([2, N])         # init observation measurements 
     for i in range(N):
-        v_m = s * np.random.random(2) # measurement noise
-        Y[:, i], _, _ = observe(R, W[:, i], v_m)
+        y, _, _ = observe(R, W[:, i], v=s*np.random.random(2))
+
+        # simulate sensor with angle and range
+        p, fi = y
+        if p < 100 and fi > -pi/4 and fi < pi/4:
+            Y[:, i] = y
+
     return Y, S
 
 
