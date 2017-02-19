@@ -175,9 +175,19 @@ def landmark_correction(l, l_i, r, x, P, Y, S):
 
 
 def landmark_creation(y, landmarks, mapspace, R, P, x, r, S):
+    """Add new landmarks to x 
+    y - landmark measurement (d, phi)
+    landmarks, mapspace - x management
+    R - robot pose
+    P, x - state
+    r - robot pose in x
+    S - noise system covariance
+    """
     # find free slots for landmark
     lids = np.where(landmarks[0, :]==0)[0] 
+
     if all(y!=0) and any(lids):
+
         # find random slot for landmark
         i = lids[np.random.randint(lids.size)] 
         l = np.where(mapspace==False)[0][:2]
@@ -214,20 +224,18 @@ def run(steps):
     q = np.array([.01, .01])        # noise standart deviation
     Q = np.diag(q**2)               # noise covarinace ??
 
-    # State index management
-    mapspace = np.zeros([x.size], dtype=bool) # fill with false
+    # x meta about free slots and landmarks
+    mapspace = np.zeros([x.size], dtype=bool) # free slots in x
+    landmarks = np.zeros([2, W.shape[1]], dtype=int) # landmark pointers
 
-    # Observed landmarks pointers to mapspace
-    landmarks = np.zeros([2, W.shape[1]], dtype=int)
-
-    r = np.where(mapspace==False)[0][0:R.size] # Place robot in map
-    mapspace[r] = True                    # block robot map positions
-
-    # initialize robot states
+    # initialize robot
+    r = np.where(mapspace==False)[0][0:R.size]  # robot pose in x
+    mapspace[r] = True
     x[r] = R
     P[r,r] = 0                    # initialize robot covariance
     R_res = []                    # robot positions for plots
      
+    # run simulation
     for t in np.arange(1, steps):
      
         # Simulation, robot move, observations
