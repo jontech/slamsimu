@@ -189,6 +189,7 @@ def landmark_creation(y, i_y, R, P, x, r, S):
     S - noise system covariance
     """
     if all(y!=0):
+        # FIXME check if landmark exists
         l = find_landmark(i_y)
 
         x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
@@ -211,6 +212,8 @@ def update_robot(r, x, P, Q, x_r, J_r, J_n):
 
 def run(steps):
     R = np.array([100, 30, 0])    # initial robot pose (x, y, th)
+    r = np.array([0, 1, 2])                 # robot pose index in x
+
     W = cloister.T
 
     x = np.zeros([R.size + W.size]) # state vector as map means
@@ -220,16 +223,10 @@ def run(steps):
     q = np.array([.01, .01])        # noise standart deviation
     Q = np.diag(q**2)               # noise covarinace ??
 
-    # x meta about free slots and landmarks
-    mapspace = np.zeros([x.size], dtype=bool) # free slots in x
-    landmarks = np.zeros([2, W.shape[1]], dtype=int) # landmark pointers
-
     # initialize robot
-    r = np.where(mapspace==False)[0][0:R.size]  # robot pose in x
-    mapspace[r] = True
-    x[r] = R
-    P[r,r] = 0                    # initialize robot covariance
-    R_res = []                    # robot positions for plots
+    x[r] = R                    # add robot pose
+    P[r,r] = 0                  # initialize robot covariance
+    R_res = []                  # robot positions for plots
      
     # run simulation
     for t in np.arange(1, steps):
@@ -246,16 +243,14 @@ def run(steps):
         x_r, J_r, J_n = move(x[r], u=np.array([0, 0]))
         x, P = update_robot(r, x, P, Q, x_r, J_r, J_n)
 
-        # takess all landmark-robot variances (suboptimal)
-        lids = np.where(landmarks[0, :])[0] # lids -> landmarks -> x
-
         # existing landmark correction
-        for i in lids:
-            l = landmarks[:, i]      # landmark pointer to x
-            x, P = landmark_correction(l, i, r, x, P, Y, S)
+        for i, y in enumerate(Y):
+            if all(y!=np.inf):
+                l = find_landmark(i)
+                x, P = landmark_correction(l, i, r, x, P, Y, S)
 
         # new landmarks integration
         for i, y in enumerate(Y.T):
             x, P = landmark_creation(y, i, R, P, x, r, S)
 
-    return np.array(R_res), W, Y
+    return np.array(R_res), W, Y, x
