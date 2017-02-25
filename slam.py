@@ -176,7 +176,14 @@ def landmark_correction(l, l_i, r, x, P, Y, S):
 
 def find_landmark(i):
     skip_R = 3
-    return np.array([i, i+1]) + skip_R
+    n_l = i * 2
+    return np.array([n_l, n_l+1]) + skip_R
+
+
+def find_all_landmarks(x):
+    n_R = 3
+    n_L = int((len(x) - n_R) / 2)
+    return np.array(list(map(find_landmark, range(0, n_L))))
 
 
 def landmark_creation(y, i_y, R, P, x, r, S):
