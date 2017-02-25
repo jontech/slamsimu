@@ -6,6 +6,13 @@ import numpy as np
 
 class UtilitiesTests(unittest.TestCase):
   
+  def test_landmark_find(self):
+    x = np.zeros([10]) # state vector as map means
+    x[[3,4]] = [1, 2]
+    l = slam.find_landmark(0)
+    self.assertTrue(all(l==[3, 4]))
+    self.assertTrue(all(x[l]==[1, 2]))
+
   def test_scan(self):
     y_polar, J_y = slam.scan(np.array([1, 1]))
     np.testing.assert_approx_equal(y_polar[0], 1.41421356)

@@ -174,7 +174,12 @@ def landmark_correction(l, l_i, r, x, P, Y, S):
     return x, P
 
 
-def landmark_creation(y, landmarks, mapspace, R, P, x, r, S):
+def find_landmark(i):
+    skip_R = 3
+    return np.array([i, i+1]) + skip_R
+
+
+def landmark_creation(y, i_y, R, P, x, r, S):
     """Add new landmarks to x 
     y - landmark measurement (d, phi)
     landmarks, mapspace - x management
@@ -183,18 +188,9 @@ def landmark_creation(y, landmarks, mapspace, R, P, x, r, S):
     r - robot pose in x
     S - noise system covariance
     """
-    # find free slots for landmark
-    lids = np.where(landmarks[0, :]==0)[0] 
+    if all(y!=0):
+        l = find_landmark(i_y)
 
-    if all(y!=0) and any(lids):
-
-        # find random slot for landmark
-        i = lids[np.random.randint(lids.size)] 
-        l = np.where(mapspace==False)[0][:2]
- 
-        mapspace[l] = True  # reserve landmark in mapspace
-        landmarks[:, i] = l # store landmark pointers to x
- 
         x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
         P[l, :] = J_r.dot(P[r, :])
         P[:, l] = P[l, :].T
@@ -259,8 +255,8 @@ def run(steps):
             x, P = landmark_correction(l, i, r, x, P, Y, S)
 
         # new landmarks integration
-        for y in Y.T:
-            x, P = landmark_creation(y, landmarks, mapspace, R, P, x, r, S)
+        for i, y in enumerate(Y.T):
+            x, P = landmark_creation(y, i, R, P, x, r, S)
 
     x_lms = x[landmarks[:, np.where(landmarks[0, :]!=0)[0]]].T
     return np.array(R_res), W, x_lms, Y
