@@ -37,7 +37,7 @@ def plot_covariance(self, P):
     plt.colorbar()
     plt.show()
 
-def plots(R_res, W, L, Y, title="N/A"):
+def plots(R_res, W, Y, title="N/A"):
     fig1 = plt.figure(1)
     ax = fig1.add_subplot(1, 1, 1)
     ax.grid(True)
@@ -45,35 +45,10 @@ def plots(R_res, W, L, Y, title="N/A"):
     ax.plot(
         R_res[:, 0], R_res[:, 1], 'o',
         W[0, :], W[1, :], '*',
-        L[:, 0], L[:, 1], '.')
-
-    for i, l in enumerate(L):
-        ax.annotate(i, xy=l)
+    )
 
     ax.set_title(title)
 
-    # ax = fig1.add_subplot(2, 1, 2, projection='polar')
-    # ax.grid(True)
-    # ax.plot(Y[1, :], Y[0, :], 'g.',
-    #         [0, -pi/4], [0, 300], 'r-',
-    #         [0, pi/4], [0, 300], 'r-')
-
-    # def add_ellip(self, cov, x, y):
-    #     w, v = np.linalg.eig(cov)
-    #     w = np.sqrt(w)
-    #     j = 1 
-    #     try:
-    #         ell = Ellipse(
-    #             xy=(x, y),
-    #             width=w[0]*j*2, 
-    #             height=w[1]*j*2,
-    #             angle=np.rad2deg(np.arccos(v[0, 0])))
-    #     except TypeError as e:
-    #         print(e)
-    #     else:
-    #         ell.set_facecolor('none')
-    #         self.ax.add_artist(ell)
-
-    plt.xlim((-5000, 5000))
-    plt.ylim((-5000, 5000))
+    plt.xlim((-30, 530))
+    plt.ylim((-30, 530))
     plt.show()

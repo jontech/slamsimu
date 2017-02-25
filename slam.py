@@ -258,5 +258,4 @@ def run(steps):
         for i, y in enumerate(Y.T):
             x, P = landmark_creation(y, i, R, P, x, r, S)
 
-    x_lms = x[landmarks[:, np.where(landmarks[0, :]!=0)[0]]].T
-    return np.array(R_res), W, x_lms, Y
+    return np.array(R_res), W, Y
