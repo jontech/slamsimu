@@ -37,7 +37,7 @@ def plot_covariance(self, P):
     plt.colorbar()
     plt.show()
 
-def plots(R_res, W, Y, state, title="N/A"):
+def plots(R_res, state, W, title="N/A"):
     
     L = state.x[state.all_landmarks]
 

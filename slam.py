@@ -255,8 +255,8 @@ def run(steps, W,
     R - initial robot pose array (x, y, th)
     u - robot control array (len/step th)
     q - noise standart deviation as Gaussian {q, Q}
+    yields - tuple of robot steps and estimator state
     """
-    R_res = []                  # robot positions from simulation
     Q = np.diag(q**2)           # noise system cov
     state = State(n_W=W.size, R=R)
 
@@ -266,8 +266,6 @@ def run(steps, W,
         # Simulation, robot move, observations
         R, _, _ = move(R, u=u, n=q*np.random.random(2))
         Y, S = observe_landmarks(W, R)
-
-        R_res.append(R)
      
         # Estimator (EKF)
 
@@ -292,4 +290,4 @@ def run(steps, W,
                 state.x = x
                 state.P = P
 
-    return np.array(R_res), W, Y, state
+        yield (R, state)
