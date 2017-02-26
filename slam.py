@@ -1,6 +1,5 @@
 from math import atan2, pi, sqrt, sin, cos, atan2
 import numpy as np
-from worlds import cloister
 from time import sleep
 
 
@@ -246,20 +245,21 @@ class State:
         return self.x[self.i_r]
 
 
-def run(steps):
-    W = cloister.T
-    R = np.array([100, 30, 0])    # initial robot pose (x, y, th)
-    u = np.array([0, 0])
-
+def run(steps, W,
+        R=np.array([100, 30, 0]),
+        u=np.array([0, 0]),
+        q=np.array([.01, .01])):
+    """ Runs SLAM simulation
+    steps - simulation time steps number
+    W - world as 2xn array
+    R - initial robot pose array (x, y, th)
+    u - robot control array (len/step th)
+    q - noise standart deviation as Gaussian {q, Q}
+    """
+    R_res = []                  # robot positions from simulation
+    Q = np.diag(q**2)           # noise system cov
     state = State(n_W=W.size, R=R)
 
-    # system noise: Gaussian {0, Q}
-    q = np.array([.01, .01])        # noise standart deviation
-    Q = np.diag(q**2)               # noise covarinace ??
-
-    # for plots
-    R_res = []                  # robot positions for plots
-     
     # run simulation
     for t in np.arange(1, steps):
      

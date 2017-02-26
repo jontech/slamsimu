@@ -59,6 +59,6 @@ def plots(R_res, W, Y, state, title="N/A"):
 
     ax.set_title(title)
 
-    plt.xlim((-30, 530))
-    plt.ylim((-30, 530))
+    plt.xlim((-100, 600))
+    plt.ylim((-100, 600))
     plt.show()

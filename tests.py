@@ -2,6 +2,7 @@ import unittest
 import plotting
 import slam
 import numpy as np
+from worlds import cloister
 
 
 class StateTests(unittest.TestCase):
@@ -34,9 +35,14 @@ class StateTests(unittest.TestCase):
 
 class SlamProcessTests(unittest.TestCase):
 
+  def setUp(self):
+    self.W = cloister.T
+
   def test_slam_simulation(self):
-    steps = 200
-    plotting.plots(*slam.run(steps), title="{} steps".format(steps))
+    steps = 4
+    plotting.plots(
+      *slam.run(steps, self.W, ),
+      title="{} steps".format(steps))
 
 
 if __name__ == '__main__':
