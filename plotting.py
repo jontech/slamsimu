@@ -37,8 +37,10 @@ def plot_covariance(self, P):
     plt.colorbar()
     plt.show()
 
-def plots(R_res, W, Y, x, title="N/A"):
+def plots(R_res, W, Y, state, title="N/A"):
     
+    L = state.x[state.all_landmarks]
+
     fig1 = plt.figure(1)
     ax = fig1.add_subplot(1, 1, 1)
     ax.grid(True)
@@ -46,8 +48,14 @@ def plots(R_res, W, Y, x, title="N/A"):
     ax.plot(
         R_res[:, 0], R_res[:, 1], 'o',
         W[0, :], W[1, :], '*',
-        #L[:, 0], L[:, 1], '.'
+        L[:, 0], L[:, 1], '.'
     )
+
+    for i, w in enumerate(W.T):
+        ax.annotate(i, xy=w)
+
+    for i, l in enumerate(L):
+        ax.annotate(i, xy=l)
 
     ax.set_title(title)
 
