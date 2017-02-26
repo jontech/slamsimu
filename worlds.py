@@ -1,5 +1,7 @@
 import numpy as np
 
+resolution = 50
+
 cloister = np.array([
    [ 2.50000,   8.75000],
    [ 3.75000,   8.75000],
@@ -53,4 +55,4 @@ cloister = np.array([
    [ 0.00000,   6.25000],
    [ 0.00000,   7.50000],
    [ 0.00000,   8.75000],
-])*50
+])*resolution
