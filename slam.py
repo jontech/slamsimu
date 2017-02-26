@@ -189,7 +189,6 @@ def landmark_creation(y, i_y, state, S):
     r = state.r
 
     if all(y!=0):
-        # FIXME check if landmark exists
         l = state.landmark(i_y)
 
         x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
@@ -222,6 +221,9 @@ class State:
         self.P = np.zeros([self.x.size]*2) # state covariance
         self.x[self.i_r] = R               # add robot pose
         self.P[self.i_r, self.i_r] = 0     # add robot pose covariance
+
+    def landmark_exist(self, i):
+        return all(self.x[self.landmark(i)]!=0)
 
     @classmethod
     def landmark(cls, i):
@@ -285,8 +287,9 @@ def run(steps):
 
         # new landmarks integration
         for i, y in enumerate(Y.T):
-            x, P = landmark_creation(y, i, state, S)
-            state.x = x
-            state.P = P
+            if not state.landmark_exist(i):
+                x, P = landmark_creation(y, i, state, S)
+                state.x = x
+                state.P = P
 
-    return np.array(R_res), W, Y, state.x
+    return np.array(R_res), W, Y, state

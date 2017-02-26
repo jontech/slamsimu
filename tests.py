@@ -4,13 +4,18 @@ import slam
 import numpy as np
 
 
-class UtilitiesTests(unittest.TestCase):
+class StateTests(unittest.TestCase):
   
   def setUp(self):
     self.state = slam.State()
     #                        R      0    1    2    3
-    self.state.x = np.array([1,1,1, 2,3, 4,5, 6,7, 8,9])
+    self.state.x = np.array([1,1,1, 2,3, 4,5, 6,7, 0,0])
     #                        0 1 2  3 4  5 6  7 8  9 10
+
+  def test_landmark_exist_by_index(self):
+    self.assertFalse(self.state.landmark_exist(3))
+    self.assertTrue(self.state.landmark_exist(1))
+    self.assertTrue(self.state.landmark_exist(2))
 
   def test_landmark_find_by_index(self):
     l = self.state.landmark(1)
