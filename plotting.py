@@ -37,7 +37,8 @@ def plot_covariance(self, P):
     plt.colorbar()
     plt.show()
 
-def plots(R_res, W, Y, title="N/A"):
+def plots(R_res, W, Y, x, title="N/A"):
+    
     fig1 = plt.figure(1)
     ax = fig1.add_subplot(1, 1, 1)
     ax.grid(True)
@@ -45,6 +46,7 @@ def plots(R_res, W, Y, title="N/A"):
     ax.plot(
         R_res[:, 0], R_res[:, 1], 'o',
         W[0, :], W[1, :], '*',
+        #L[:, 0], L[:, 1], '.'
     )
 
     ax.set_title(title)

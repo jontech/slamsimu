@@ -147,7 +147,11 @@ def observe_landmarks(W, R):
     return Y, S
 
 
-def landmark_correction(l, l_i, r, x, P, Y, S):
+def landmark_correction(l, l_i, state, Y, S):
+    r = state.r
+    x = state.x
+    P = state.P
+
     rl = np.hstack([r, l])   # robot and landmark pointer in x
     
     y, J_r, J_y = observe(x[r], x[l]) # expectation measurement y = h(x)
@@ -174,30 +178,19 @@ def landmark_correction(l, l_i, r, x, P, Y, S):
     return x, P
 
 
-def find_landmark(i):
-    skip_R = 3
-    n_l = i * 2
-    return np.array([n_l, n_l+1]) + skip_R
-
-
-def find_all_landmarks(x):
-    n_R = 3
-    n_L = int((len(x) - n_R) / 2)
-    return np.array(list(map(find_landmark, range(0, n_L))))
-
-
-def landmark_creation(y, i_y, R, P, x, r, S):
+def landmark_creation(y, i_y, state, S):
     """Add new landmarks to x 
     y - landmark measurement (d, phi)
-    landmarks, mapspace - x management
-    R - robot pose
-    P, x - state
-    r - robot pose in x
     S - noise system covariance
     """
+    R = state.R
+    P = state.P
+    x = state.x
+    r = state.r
+
     if all(y!=0):
         # FIXME check if landmark exists
-        l = find_landmark(i_y)
+        l = state.landmark(i_y)
 
         x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
         P[l, :] = J_r.dot(P[r, :])
@@ -208,7 +201,11 @@ def landmark_creation(y, i_y, R, P, x, r, S):
     return x, P
 
 
-def update_robot(r, x, P, Q, x_r, J_r, J_n):
+def update_robot(state, Q, x_r, J_r, J_n):
+    r = state.r
+    x = state.x
+    P = state.P
+
     x[r] = x_r
     P[r, :] = J_r.dot(P[r, :])
     P[:, r] = P[r, :].T
@@ -217,47 +214,79 @@ def update_robot(r, x, P, Q, x_r, J_r, J_n):
     return x, P
 
 
+class State:
+    i_r = np.array([0, 1, 2])     # robot pose index in x
+
+    def __init__(self, R=np.array([100, 30, 0]), n_W=0):
+        self.x = np.zeros([R.size + n_W])  # state vector as map means
+        self.P = np.zeros([self.x.size]*2) # state covariance
+        self.x[self.i_r] = R               # add robot pose
+        self.P[self.i_r, self.i_r] = 0     # add robot pose covariance
+
+    @classmethod
+    def landmark(cls, i):
+        skip_R = len(cls.i_r)
+        n_l = i * 2
+        return np.array([n_l, n_l+1]) + skip_R
+
+    @property
+    def all_landmarks(self):
+        n_R = 3
+        n_L = int((len(self.x) - n_R) / 2)
+        return np.array(list(map(self.landmark, range(0, n_L))))
+
+    @property
+    def r(self):
+        return self.i_r
+
+    @property
+    def R(self):
+        return self.x[self.i_r]
+
+
 def run(steps):
-    R = np.array([100, 30, 0])    # initial robot pose (x, y, th)
-    r = np.array([0, 1, 2])                 # robot pose index in x
-
     W = cloister.T
+    R = np.array([100, 30, 0])    # initial robot pose (x, y, th)
+    u = np.array([0, 0])
 
-    x = np.zeros([R.size + W.size]) # state vector as map means
-    P = np.zeros([x.size]*2)        # state covariance
+    state = State(n_W=W.size, R=R)
 
     # system noise: Gaussian {0, Q}
     q = np.array([.01, .01])        # noise standart deviation
     Q = np.diag(q**2)               # noise covarinace ??
 
-    # initialize robot
-    x[r] = R                    # add robot pose
-    P[r,r] = 0                  # initialize robot covariance
+    # for plots
     R_res = []                  # robot positions for plots
      
     # run simulation
     for t in np.arange(1, steps):
      
         # Simulation, robot move, observations
-        R, _, _ = move(R, u=np.array([0, 0]), n=q*np.random.random(2))
+        R, _, _ = move(R, u=u, n=q*np.random.random(2))
         Y, S = observe_landmarks(W, R)
 
         R_res.append(R)
      
         # Estimator (EKF)
-     
+
         # moves robot and update [x P]
-        x_r, J_r, J_n = move(x[r], u=np.array([0, 0]))
-        x, P = update_robot(r, x, P, Q, x_r, J_r, J_n)
+        x_r, J_r, J_n = move(state.R, u=u)
+        x, P = update_robot(state, Q, x_r, J_r, J_n)
+        state.x = x
+        state.P = P
 
         # existing landmark correction
         for i, y in enumerate(Y):
             if all(y!=np.inf):
-                l = find_landmark(i)
-                x, P = landmark_correction(l, i, r, x, P, Y, S)
+                l = state.landmark(i)
+                x, P = landmark_correction(l, i, state, Y, S)
+                state.x = x
+                state.P = P
 
         # new landmarks integration
         for i, y in enumerate(Y.T):
-            x, P = landmark_creation(y, i, R, P, x, r, S)
+            x, P = landmark_creation(y, i, state, S)
+            state.x = x
+            state.P = P
 
-    return np.array(R_res), W, Y, x
+    return np.array(R_res), W, Y, state.x
