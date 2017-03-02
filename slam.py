@@ -3,6 +3,9 @@ import numpy as np
 from time import sleep
 
 
+np.set_printoptions(precision=3)
+
+
 def transform_global(F, p):
     """ transform point from frame F to global frame.
     F = [x, y, theta], p = [x, y]
@@ -186,15 +189,15 @@ def landmark_creation(y, i_y, state, S):
     x = state.x
     r = state.r
 
-    if all(y!=0):
-        l = state.landmark(i_y)
+    l = state.landmark(i_y)
 
-        x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
-        P[l, :] = J_r.dot(P[r, :])
-        P[:, l] = P[l, :].T
-        P[l[:, np.newaxis], l] = J_r.dot(
-            P[r[:, np.newaxis], r]).dot(
-                J_r.T) + J_y.dot(S).dot(J_y.T)
+    x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
+    P[l, :] = J_r.dot(P[r, :])
+    P[:, l] = P[l, :].T
+    P[l[:, np.newaxis], l] = J_r.dot(
+        P[r[:, np.newaxis], r]).dot(
+            J_r.T) + J_y.dot(S).dot(J_y.T)
+
     return x, P
 
 
@@ -278,7 +281,7 @@ def run(steps, W,
         for i, y in enumerate(Y.T):
             if all(y!=np.inf):
                 l = state.landmark(i)
-                print(i, y, x[l])
+                print(i, W.T[i], inv_observe(R, y)[0], x[l])
                 x, P = landmark_correction(l, i, state, Y, S)
                 state.x = x
                 state.P = P
