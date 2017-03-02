@@ -140,8 +140,7 @@ def observe_landmarks(W, R):
 
         # simulate sensor with angle and range
         p, fi = y
-        if p < 100 and fi > -pi/4 and fi < pi/4:
-            Y[:, i] = y
+        Y[:, i] = y if p < 100 and fi > -pi/4 and fi < pi/4 else np.inf
 
     return Y, S
 
@@ -264,7 +263,7 @@ def run(steps, W,
     for t in np.arange(1, steps):
      
         # Simulation, robot move, observations
-        R, _, _ = move(R, u=u, n=q*np.random.random(2))
+        R, _, _ = move(R, u=u)
         Y, S = observe_landmarks(W, R)
      
         # Estimator (EKF)
@@ -276,16 +275,17 @@ def run(steps, W,
         state.P = P
 
         # existing landmark correction
-        for i, y in enumerate(Y):
+        for i, y in enumerate(Y.T):
             if all(y!=np.inf):
                 l = state.landmark(i)
+                print(i, y, x[l])
                 x, P = landmark_correction(l, i, state, Y, S)
                 state.x = x
                 state.P = P
 
         # new landmarks integration
         for i, y in enumerate(Y.T):
-            if not state.landmark_exist(i):
+            if not state.landmark_exist(i) and all(y!=np.inf):
                 x, P = landmark_creation(y, i, state, S)
                 state.x = x
                 state.P = P
