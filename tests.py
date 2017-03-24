@@ -3,6 +3,9 @@ import plotting
 import slam
 import numpy as np
 from worlds import cloister
+from sim import move_simulation
+from plotting import make_ellip
+from matplotlib import pyplot as plt
 
 
 class StateTests(unittest.TestCase):
@@ -39,14 +42,29 @@ class SlamProcessTests(unittest.TestCase):
     self.W = cloister.T
 
   def test_slam_simulation(self):
-    steps = 10
-    res = list(slam.run(steps, self.W, u=np.array([10, 0])))
+    steps = 30
+    res = list(slam.run(steps, self.W, u=np.array([0, 0])))
 
     R_sim = np.array(list(map(lambda r: r[0], res)))
     states = list(map(lambda r: r[1], res))
 
-    plotting.plots(
-      R_sim, states.pop(), self.W, title="{} steps".format(steps))
+    state = states.pop()
+
+    plotting.plots(R_sim, state, self.W, title="{} steps".format(steps))
+    plotting.plot_covariance(state.P)
+
+
+class PlottingTests(unittest.TestCase):
+
+  def test_ellipse_on_landmark(self):
+    l = np.array([1, 2])
+    P_l = np.array([[0.21, 0],
+                    [0, 2]])
+
+    x, y = make_ellip(l, P_l)
+
+    # plt.plot(x, y)
+    # plt.show()
 
 
 if __name__ == '__main__':

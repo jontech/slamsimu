@@ -1,7 +1,8 @@
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
-from matplotlib.patches import Ellipse
 import numpy as np
+from math import pi
+
 
 def animations(R_res):
     fig, ax = plt.subplots()
@@ -31,11 +32,25 @@ def animations(R_res):
     
     ani.save('/tmp/Animation.gif',writer='imagemagick',fps=5);
 
-def plot_covariance(self, P):
+
+def plot_covariance(P):
     plt.figure(2)
     plt.pcolor(P)
     plt.colorbar()
     plt.show()
+
+
+def make_ellip(l, P_l, N=16, n=1):
+    alpha = 2*pi/N*np.arange(0, N)
+    circle = np.array([np.cos(alpha), np.sin(alpha)])
+    U, S, Vh = np.linalg.svd(P_l)
+    V = Vh.T
+    d = np.sqrt(U)
+    ellip = np.dot(n, V).dot(d).dot(circle)
+    x = l[0] + ellip[0,:]
+    y = l[1] + ellip[1,:]
+    return x, y
+
 
 def plots(R_res, state, W, title="N/A"):
     
@@ -56,6 +71,8 @@ def plots(R_res, state, W, title="N/A"):
 
     for i, l in enumerate(L):
         ax.annotate(i, xy=l)
+        #ax.plot(make_ellip(l, state.P_l(i)))
+        
 
     ax.set_title(title)
 
