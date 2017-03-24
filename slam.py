@@ -226,6 +226,11 @@ class State:
     def landmark_exist(self, i):
         return all(self.x[self.landmark(i)]!=0)
 
+    def P_l(self, i):
+        """get landmark cov matrix by landmark index"""
+        l = self.landmark(i)
+        return self.P[np.ix_(l, l)]
+
     @classmethod
     def landmark(cls, i):
         skip_R = len(cls.i_r)
@@ -281,7 +286,6 @@ def run(steps, W,
         for i, y in enumerate(Y.T):
             if all(y!=np.inf):
                 l = state.landmark(i)
-                print(i, W.T[i], inv_observe(R, y)[0], x[l])
                 x, P = landmark_correction(l, i, state, Y, S)
                 state.x = x
                 state.P = P
