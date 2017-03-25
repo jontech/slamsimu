@@ -45,7 +45,7 @@ def make_ellip(l, P_l, N=16, n=1):
     return x, y
 
 
-def plots(R_res, state, W, title="N/A"):
+def plots(R_res, state, W):
     
     L = state.x[state.all_landmarks]
 
@@ -66,7 +66,7 @@ def plots(R_res, state, W, title="N/A"):
         ax.annotate(i, xy=l)
         #ax.plot(make_ellip(l, state.P_l(i)))
 
-    ax.set_title(title)
+    ax.set_title("EKF SLAM simulation. Steps={}".format(R_res.shape[0]))
 
     plt.xlim((-100, 600))
     plt.ylim((-100, 600))

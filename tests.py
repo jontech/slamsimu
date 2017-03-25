@@ -42,12 +42,11 @@ class SlamProcessTests(unittest.TestCase):
     self.W = cloister.T
 
   def test_slam_simulation(self):
-    steps = 30
-    res = list(slam.run(steps, self.W, u=np.array([0, 0])))
+    res = list(slam.run(self.W, steps=30, u=np.array([5, 0])))
     R_sim = np.array(list(map(lambda r: r[0], res)))
     states = list(map(lambda r: r[1], res))
     state = states.pop()
-    plotting.plots(R_sim, state, self.W, title="{} steps".format(steps))
+    plotting.plots(R_sim, state, self.W)
 
 
 class PlottingTests(unittest.TestCase):

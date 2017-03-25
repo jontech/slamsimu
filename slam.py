@@ -252,7 +252,8 @@ class State:
         return self.x[self.i_r]
 
 
-def run(steps, W,
+def run(W,
+        steps=10,
         R=np.array([100, 30, 0]),
         u=np.array([0, 0]),
         q=np.array([.01, .01])):
