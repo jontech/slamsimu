@@ -44,14 +44,10 @@ class SlamProcessTests(unittest.TestCase):
   def test_slam_simulation(self):
     steps = 30
     res = list(slam.run(steps, self.W, u=np.array([0, 0])))
-
     R_sim = np.array(list(map(lambda r: r[0], res)))
     states = list(map(lambda r: r[1], res))
-
     state = states.pop()
-
     plotting.plots(R_sim, state, self.W, title="{} steps".format(steps))
-    plotting.plot_covariance(state.P)
 
 
 class PlottingTests(unittest.TestCase):

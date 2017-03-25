@@ -33,13 +33,6 @@ def animations(R_res):
     ani.save('/tmp/Animation.gif',writer='imagemagick',fps=5);
 
 
-def plot_covariance(P):
-    plt.figure(2)
-    plt.pcolor(P)
-    plt.colorbar()
-    plt.show()
-
-
 def make_ellip(l, P_l, N=16, n=1):
     alpha = 2*pi/N*np.arange(0, N)
     circle = np.array([np.cos(alpha), np.sin(alpha)])
@@ -56,8 +49,8 @@ def plots(R_res, state, W, title="N/A"):
     
     L = state.x[state.all_landmarks]
 
-    fig1 = plt.figure(1)
-    ax = fig1.add_subplot(1, 1, 1)
+    fig1 = plt.figure(1, figsize=(10, 4),)
+    ax = fig1.add_subplot(1, 2, 1)
     ax.grid(True)
 
     ax.plot(
@@ -72,10 +65,15 @@ def plots(R_res, state, W, title="N/A"):
     for i, l in enumerate(L):
         ax.annotate(i, xy=l)
         #ax.plot(make_ellip(l, state.P_l(i)))
-        
 
     ax.set_title(title)
 
     plt.xlim((-100, 600))
     plt.ylim((-100, 600))
+
+    # covariance
+    plt.subplot(1, 2, 2)
+    plt.pcolor(state.P)
+    plt.colorbar()
+
     plt.show()
