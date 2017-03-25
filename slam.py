@@ -166,16 +166,16 @@ def landmark_correction(l, l_i, state, Y, S):
     z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
 
     # inovation covariance with sensor noise
-    Z = J_ry.dot(P[rl[:, np.newaxis], rl]).dot(J_ry.T) + S         
+    Z = J_ry.dot(P[np.ix_(rl, rl)]).dot(J_ry.T) + S         
 
     # Kalman gain P*H'*Z^-1
     # when P (variability) large (low confidence) K also large
     # when robot static state P and K should go to 0
-    K = P[rl[:, np.newaxis], rl].dot(J_ry.T).dot(np.linalg.inv(Z))
+    K = P[np.ix_(rl, rl)].dot(J_ry.T).dot(np.linalg.inv(Z))
   
     # posteriori update
     x[rl] = x[rl] + K.dot(z)
-    P[rl[:, np.newaxis], rl] = P[rl[:, np.newaxis], rl] - K.dot(Z).dot(K.T)
+    P[np.ix_(rl, rl)] = P[np.ix_(rl, rl)] - K.dot(Z).dot(K.T)
     return x, P
 
 
@@ -194,8 +194,8 @@ def landmark_creation(y, i_y, state, S):
     x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
     P[l, :] = J_r.dot(P[r, :])
     P[:, l] = P[l, :].T
-    P[l[:, np.newaxis], l] = J_r.dot(
-        P[r[:, np.newaxis], r]).dot(
+    P[np.ix_(l, l)] = J_r.dot(
+        P[np.ix_(r, r)]).dot(
             J_r.T) + J_y.dot(S).dot(J_y.T)
 
     return x, P
@@ -209,7 +209,7 @@ def update_robot(state, Q, x_r, J_r, J_n):
     x[r] = x_r
     P[r, :] = J_r.dot(P[r, :])
     P[:, r] = P[r, :].T
-    P[r[:, np.newaxis], r] = J_r.dot(
+    P[np.ix_(r, r)] = J_r.dot(
         P[r, r]).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
     return x, P
 
