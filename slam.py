@@ -207,10 +207,11 @@ def update_robot(state, Q, x_r, J_r, J_n):
     P = state.P
 
     x[r] = x_r
+    P_rr = P[np.ix_(r, r)]
     P[r, :] = J_r.dot(P[r, :])
     P[:, r] = P[r, :].T
     P[np.ix_(r, r)] = J_r.dot(
-        P[r, r]).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
+        P_rr).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
     return x, P
 
 
