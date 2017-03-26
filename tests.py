@@ -45,8 +45,8 @@ class SlamProcessTests(unittest.TestCase):
     res = list(slam.run(self.W, steps=30, u=np.array([5, 0])))
     R_sim = np.array(list(map(lambda r: r[0], res)))
     states = list(map(lambda r: r[1], res))
-    state = states.pop()
-    plotting.plots(R_sim, state, self.W)
+
+    plotting.plots(R_sim, states, self.W)
 
 
 class PlottingTests(unittest.TestCase):

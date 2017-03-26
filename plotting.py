@@ -45,9 +45,11 @@ def make_ellip(l, P_l, N=16, n=1):
     return x, y
 
 
-def plots(R_res, state, W):
-    
+def plots(R_res, states, W):
+    state = states[-1:][0]
+
     L = state.x[state.all_landmarks]
+    R = np.array(list(map(lambda s: s.R, states)))
 
     fig1 = plt.figure(1, figsize=(10, 4),)
     ax = fig1.add_subplot(1, 2, 1)
@@ -56,7 +58,8 @@ def plots(R_res, state, W):
     ax.plot(
         R_res[:, 0], R_res[:, 1], 'o',
         W[0, :], W[1, :], '*',
-        L[:, 0], L[:, 1], '.'
+        L[:, 0], L[:, 1], '.',
+        R[:, 0], R[:, 1], 'o'
     )
 
     for i, w in enumerate(W.T):
@@ -64,7 +67,7 @@ def plots(R_res, state, W):
 
     for i, l in enumerate(L):
         ax.annotate(i, xy=l)
-        #ax.plot(make_ellip(l, state.P_l(i)))
+        #ax.plot(make_ellip(l, P_l(i)))
 
     ax.set_title("EKF SLAM simulation. Steps={}".format(R_res.shape[0]))
 
