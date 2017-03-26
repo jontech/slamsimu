@@ -1,6 +1,7 @@
 from math import atan2, pi, sqrt, sin, cos, atan2
 import numpy as np
 from time import sleep
+from copy import deepcopy
 
 
 np.set_printoptions(precision=3)
@@ -176,7 +177,11 @@ def landmark_correction(l, l_i, state, Y, S):
     # posteriori update
     x[rl] = x[rl] + K.dot(z)
     P[np.ix_(rl, rl)] = P[np.ix_(rl, rl)] - K.dot(Z).dot(K.T)
-    return x, P
+
+    state.x = x
+    state.P = P
+
+    return state
 
 
 def landmark_creation(y, i_y, state, S):
@@ -198,7 +203,10 @@ def landmark_creation(y, i_y, state, S):
         P[np.ix_(r, r)]).dot(
             J_r.T) + J_y.dot(S).dot(J_y.T)
 
-    return x, P
+    state.x = x
+    state.P = P
+
+    return state
 
 
 def update_robot(state, Q, x_r, J_r, J_n):
@@ -212,7 +220,11 @@ def update_robot(state, Q, x_r, J_r, J_n):
     P[:, r] = P[r, :].T
     P[np.ix_(r, r)] = J_r.dot(
         P_rr).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
-    return x, P
+
+    state.x = x
+    state.P = P
+
+    return state
 
 
 class State:
@@ -280,23 +292,17 @@ def run(W,
 
         # moves robot and update [x P]
         x_r, J_r, J_n = move(state.R, u=u)
-        x, P = update_robot(state, Q, x_r, J_r, J_n)
-        state.x = x
-        state.P = P
+        state = update_robot(deepcopy(state), Q, x_r, J_r, J_n)
 
         # existing landmark correction
         for i, y in enumerate(Y.T):
             if all(y!=np.inf):
                 l = state.landmark(i)
-                x, P = landmark_correction(l, i, state, Y, S)
-                state.x = x
-                state.P = P
+                state = landmark_correction(l, i, deepcopy(state), Y, S)
 
         # new landmarks integration
         for i, y in enumerate(Y.T):
             if not state.landmark_exist(i) and all(y!=np.inf):
-                x, P = landmark_creation(y, i, state, S)
-                state.x = x
-                state.P = P
+                state = landmark_creation(y, i, deepcopy(state), S)
 
         yield (R, state)
