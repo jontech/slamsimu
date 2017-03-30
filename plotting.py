@@ -69,7 +69,7 @@ def plots(R_res, states, W):
         ax.annotate(i, xy=l)
         #ax.plot(make_ellip(l, P_l(i)))
 
-    ax.set_title("EKF SLAM simulation. Steps={}".format(R_res.shape[0]))
+    ax.set_title("states x+W, steps={}".format(R_res.shape[0]+1))
 
     plt.xlim((-100, 600))
     plt.ylim((-100, 600))
@@ -78,5 +78,7 @@ def plots(R_res, states, W):
     plt.subplot(1, 2, 2)
     plt.pcolor(state.P)
     plt.colorbar()
+    plt.grid(True)
+    plt.title("P")
 
     plt.show()
