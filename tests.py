@@ -1,6 +1,7 @@
 import unittest
 import plotting
 import slam
+from math import pi
 import numpy as np
 from worlds import cloister
 from plotting import make_ellip
@@ -45,7 +46,9 @@ class SlamProcessTests(unittest.TestCase):
       self.W,
       steps=30,
       u=np.array([10, 0]),
-      R=np.array([30, 40, 0])))
+      R=np.array([30, 40, 0]),
+      q=np.array([.01, .01]),
+      s=np.array([.25, 1*pi/180])))
     R_sim = np.array(list(map(lambda r: r[0], res)))
     states = list(map(lambda r: r[1], res))
 
