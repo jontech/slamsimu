@@ -50,7 +50,7 @@ def transform_local(F, p):
     return p, J_f, J_p
 
 
-def move(r, u=np.array([0, 0]), n=np.zeros(2)):
+def move(r, u=np.array([0, 0]), q=np.zeros(2)):
     """ Move robot using control.
     r - current position
     u - control (distance, angle in radians), default not moving
@@ -65,6 +65,7 @@ def move(r, u=np.array([0, 0]), n=np.zeros(2)):
     3) update robot position in global frame by u
 
     """
+    n = q.dot(np.random.randn(2, 1))
     a = r[2]
     u = u + n
     # change robot rotation a
@@ -132,12 +133,10 @@ def inv_observe(r, y):
     return p, J_r, J_y, 
 
 
-def observe_landmarks(W, R):
+def observe_landmarks(W, R, s=np.array([0, 0])):
     """observation ALL landmarks in world, return messurements Y"""
     # TODO landmark asociation (same landmark filter)
     N = W.shape[1]               # world size
-    s = np.array([.1, 1*pi/180]) # noise standart deviation
-    S = np.diag(s**2)            # noise covarince
     Y = np.zeros([2, N])         # init observation measurements 
     for i in range(N):
         y, _, _ = observe(R, W[:, i], v=s*np.random.random(2))
@@ -146,7 +145,7 @@ def observe_landmarks(W, R):
         p, fi = y
         Y[:, i] = y if p < 100 and fi > -pi/4 and fi < pi/4 else np.inf
 
-    return Y, S
+    return Y
 
 
 def landmark_correction(l, l_i, state, Y, S):
@@ -158,25 +157,22 @@ def landmark_correction(l, l_i, state, Y, S):
     
     y, J_r, J_y = observe(x[r], x[l]) # expectation measurement y = h(x)
     J_ry = np.hstack([J_r, J_y])      # expectation jacobian
+    E = J_ry.dot(P[np.ix_(rl, rl)]).dot(J_ry.T) # expectation
 
     # meassurement inovation z with covariance Z
     z = Y[:, l_i] - y
-
     # angle correction
     z[1] = z[1] - 2*pi if z[1] > pi else z[1]
     z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
-
     # inovation covariance with sensor noise
-    Z = J_ry.dot(P[np.ix_(rl, rl)]).dot(J_ry.T) + S         
+    Z = S + E       
 
     # Kalman gain P*H'*Z^-1
-    # when P (variability) large (low confidence) K also large
-    # when robot static state P and K should go to 0
-    K = P[np.ix_(rl, rl)].dot(J_ry.T).dot(np.linalg.inv(Z))
-  
+    K = P[:, rl].dot(J_ry.T).dot(np.linalg.inv(Z))
+
     # posteriori update
-    x[rl] = x[rl] + K.dot(z)
-    P[np.ix_(rl, rl)] = P[np.ix_(rl, rl)] - K.dot(Z).dot(K.T)
+    x = x + K.dot(z)
+    P = P - K.dot(Z).dot(K.T)
 
     state.x = x
     state.P = P
@@ -230,7 +226,7 @@ def update_robot(state, Q, x_r, J_r, J_n):
 class State:
     i_r = np.array([0, 1, 2])     # robot pose index in x
 
-    def __init__(self, R=np.array([100, 30, 0]), n_W=0):
+    def __init__(self, R, n_W):
         self.x = np.zeros([R.size + n_W])  # state vector as map means
         self.P = np.zeros([self.x.size]*2) # state covariance
         self.x[self.i_r] = R               # add robot pose
@@ -258,6 +254,7 @@ class State:
 
     @property
     def r(self):
+        """robot pose indexes in x"""
         return self.i_r
 
     @property
@@ -267,31 +264,35 @@ class State:
 
 def run(W,
         steps=10,
-        R=np.array([100, 30, 0]),
+        R=np.array([0, 0, 0]),
         u=np.array([0, 0]),
-        q=np.array([.01, .01])):
+        q=np.array([.01, .01]),
+        s=np.array([.05, 1*pi/180])):
     """ Runs SLAM simulation
     steps - simulation time steps number
     W - world as 2xn array
     R - initial robot pose array (x, y, th)
     u - robot control array (len/step th)
-    q - noise standart deviation as Gaussian {q, Q}
+    q - move noise standart deviation as Gaussian {q, Q}
+    s - landmark noise [dist noise cm, angle noise]
     yields - tuple of robot steps and estimator state
     """
     Q = np.diag(q**2)           # noise system cov
+    S = np.diag(s**2)           # noise landmark cov
+
     state = State(n_W=W.size, R=R)
 
     # run simulation
     for t in np.arange(1, steps):
      
-        # Simulation, robot move, observations
+        # Simulation, actualy robot move, observations
         R, _, _ = move(R, u=u)
-        Y, S = observe_landmarks(W, R)
-     
+        Y = observe_landmarks(W, R, s=s)
+
         # Estimator (EKF)
 
-        # moves robot and update [x P]
-        x_r, J_r, J_n = move(state.R, u=u)
+        # move robot and and update [x P]
+        x_r, J_r, J_n = move(state.R, u=u, q=q)
         state = update_robot(deepcopy(state), Q, x_r, J_r, J_n)
 
         # existing landmark correction

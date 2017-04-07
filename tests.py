@@ -3,7 +3,6 @@ import plotting
 import slam
 import numpy as np
 from worlds import cloister
-from sim import move_simulation
 from plotting import make_ellip
 from matplotlib import pyplot as plt
 
@@ -11,7 +10,7 @@ from matplotlib import pyplot as plt
 class StateTests(unittest.TestCase):
   
   def setUp(self):
-    self.state = slam.State()
+    self.state = slam.State(np.array([1,1,1]), 0)
     #                        R      0    1    2    3
     self.state.x = np.array([1,1,1, 2,3, 4,5, 6,7, 0,0])
     #                        0 1 2  3 4  5 6  7 8  9 10
@@ -42,7 +41,11 @@ class SlamProcessTests(unittest.TestCase):
     self.W = cloister.T
 
   def test_slam_simulation(self):
-    res = list(slam.run(self.W, steps=30, u=np.array([5, 0])))
+    res = list(slam.run(
+      self.W,
+      steps=30,
+      u=np.array([10, 0]),
+      R=np.array([30, 40, 0])))
     R_sim = np.array(list(map(lambda r: r[0], res)))
     states = list(map(lambda r: r[1], res))
 
