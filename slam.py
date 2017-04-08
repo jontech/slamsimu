@@ -148,19 +148,20 @@ def observe_landmarks(W, R, s=np.array([0, 0])):
     return Y
 
 
-def landmark_correction(l, l_i, state, Y, S):
+def landmark_correction(y, y_i, state, S):
     r = state.r
     x = state.x
     P = state.P
+    l = state.landmark(y_i)
 
     rl = np.hstack([r, l])   # robot and landmark pointer in x
     
-    y, J_r, J_y = observe(x[r], x[l]) # expectation measurement y = h(x)
+    x_y, J_r, J_y = observe(x[r], x[l]) # expectation measurement y = h(x)
     J_ry = np.hstack([J_r, J_y])      # expectation jacobian
     E = J_ry.dot(P[np.ix_(rl, rl)]).dot(J_ry.T) # expectation
 
     # meassurement inovation z with covariance Z
-    z = Y[:, l_i] - y
+    z = y - x_y
     # angle correction
     z[1] = z[1] - 2*pi if z[1] > pi else z[1]
     z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
@@ -298,8 +299,7 @@ def run(W,
         # existing landmark correction
         for i, y in enumerate(Y.T):
             if all(y!=np.inf):
-                l = state.landmark(i)
-                state = landmark_correction(l, i, deepcopy(state), Y, S)
+                state = landmark_correction(y, i, deepcopy(state), S)
 
         # new landmarks integration
         for i, y in enumerate(Y.T):
