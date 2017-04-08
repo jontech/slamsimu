@@ -143,7 +143,7 @@ def observe_landmarks(W, R, s=np.array([0, 0])):
 
         # simulate sensor with angle and range
         p, fi = y
-        Y[:, i] = y if p < 100 and fi > -pi/4 and fi < pi/4 else np.inf
+        Y[:, i] = y if p < 100 and fi > -pi/2 and fi < pi/2 else np.inf
 
     return Y
 
