@@ -298,7 +298,7 @@ def run(W,
 
         # existing landmark correction
         for i, y in enumerate(Y.T):
-            if all(y!=np.inf):
+            if state.landmark_exist(i) and all(y!=np.inf):
                 state = landmark_correction(y, i, deepcopy(state), S)
 
         # new landmarks integration
