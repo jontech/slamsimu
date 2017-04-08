@@ -296,14 +296,13 @@ def run(W,
         x_r, J_r, J_n = move(state.R, u=u, q=q)
         state = update_robot(deepcopy(state), Q, x_r, J_r, J_n)
 
-        # existing landmark correction
         for i, y in enumerate(Y.T):
-            if state.landmark_exist(i) and all(y!=np.inf):
-                state = landmark_correction(y, i, deepcopy(state), S)
-
-        # new landmarks integration
-        for i, y in enumerate(Y.T):
-            if not state.landmark_exist(i) and all(y!=np.inf):
-                state = landmark_creation(y, i, deepcopy(state), S)
+            if all(y!=np.inf):
+                # existing landmark correction
+                if state.landmark_exist(i):
+                    state = landmark_correction(y, i, deepcopy(state), S)
+                # new landmarks integration
+                else:
+                    state = landmark_creation(y, i, deepcopy(state), S)
 
         yield (R, state)
