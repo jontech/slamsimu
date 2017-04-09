@@ -50,7 +50,7 @@ def transform_local(F, p):
     return p, J_f, J_p
 
 
-def move(r, u=np.array([0, 0]), q=np.zeros(2)):
+def move(r, u=np.array([0, 0]), n=np.zeros(2)):
     """ Move robot using control.
     r - current position
     u - control (distance, angle in radians), default not moving
@@ -65,7 +65,6 @@ def move(r, u=np.array([0, 0]), q=np.zeros(2)):
     3) update robot position in global frame by u
 
     """
-    n = q.dot(np.random.randn(2, 1))
     a = r[2]
     u = u + n
     # change robot rotation a
@@ -133,13 +132,13 @@ def inv_observe(r, y):
     return p, J_r, J_y, 
 
 
-def observe_landmarks(W, R, s=np.array([0, 0])):
+def observe_landmarks(W, R, v=np.array([0, 0])):
     """observation ALL landmarks in world, return messurements Y"""
     # TODO landmark asociation (same landmark filter)
     N = W.shape[1]               # world size
     Y = np.zeros([2, N])         # init observation measurements 
     for i in range(N):
-        y, _, _ = observe(R, W[:, i], v=s*np.random.random(2))
+        y, _, _ = observe(R, W[:, i], v=v)
 
         # simulate sensor with angle and range
         p, fi = y
@@ -280,20 +279,22 @@ def run(W,
     """
     Q = np.diag(q**2)           # noise system cov
     S = np.diag(s**2)           # noise landmark cov
+    n = q.dot(np.random.randn(2, 1))
+    v = s*np.random.random(2)
 
     state = State(n_W=W.size, R=R)
 
     # run simulation
     for t in np.arange(1, steps):
      
-        # Simulation, actualy robot move, observations
+        # Simulation actual robot move and observe
         R, _, _ = move(R, u=u)
-        Y = observe_landmarks(W, R, s=s)
+        Y = observe_landmarks(W, R, v=v)
 
         # Estimator (EKF)
 
-        # move robot and and update [x P]
-        x_r, J_r, J_n = move(state.R, u=u, q=q)
+        # robot move prediction
+        x_r, J_r, J_n = move(state.R, u=u, n=n)
         state = update_robot(deepcopy(state), Q, x_r, J_r, J_n)
 
         for i, y in enumerate(Y.T):
