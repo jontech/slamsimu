@@ -38,8 +38,9 @@ class StateTests(unittest.TestCase):
 
   def test_dynamic_landmark_init(self):
     slot = self.state.new_slot
-    self.assertEqual(slot[0], 12)
-    self.assertEqual(slot[1], 13)
+    self.assertEqual(slot[0], 11)
+    self.assertEqual(slot[1], 12)
+    self.assertTrue(all(self.state.x[slot]==0))
 
 
 class SlamProcessTests(unittest.TestCase):

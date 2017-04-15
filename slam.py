@@ -251,7 +251,7 @@ class State:
         self.x = np.pad(self.x, (0, 2), 'constant')
         self.P = np.pad(self.P, ((0, 2), (0, 2)), 'constant')
         n = self.x.shape[0]
-        return np.array([n-1, n])
+        return np.array([n-2, n-1])
 
     @property
     def all_landmarks(self):
