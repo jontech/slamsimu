@@ -20,10 +20,10 @@ def transform_global(F, p):
         [sin(a_F), cos(a_F)]
     ])
     p_w = R.dot(p) + t_F  
-    x_p, y_p = p
+    x, y = p
     J_f = np.array([
-        [1, 0, -y_p*cos(a_F) - x_p*sin(a_F)],
-        [0, 1, x_p*cos(a_F) - y_p*sin(a_F)]
+        [1, 0, -y*cos(a_F) - x*sin(a_F)],
+        [0, 1, x*cos(a_F) - y*sin(a_F)]
     ])
     J_p = R
     return p_w, J_f, J_p
@@ -279,8 +279,8 @@ def run(W,
     """
     Q = np.diag(q**2)           # noise system cov
     S = np.diag(s**2)           # noise landmark cov
-    n = q.dot(np.random.randn(2, 1))
-    v = s*np.random.random(2)
+    n = q*np.random.randn(1, 2)[0]
+    v = s*np.random.randn(1, 2)[0]
 
     state = State(n_W=W.size, R=R)
 
