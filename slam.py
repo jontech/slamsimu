@@ -247,6 +247,13 @@ class State:
         return np.array([n_l, n_l+1]) + skip_R
 
     @property
+    def new_slot(self):
+        self.x = np.pad(self.x, (0, 2), 'constant')
+        self.P = np.pad(self.P, ((0, 2), (0, 2)), 'constant')
+        n = self.x.shape[0]
+        return np.array([n-1, n])
+
+    @property
     def all_landmarks(self):
         n_R = 3
         n_L = int((len(self.x) - n_R) / 2)

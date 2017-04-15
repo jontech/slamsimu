@@ -11,10 +11,11 @@ from matplotlib import pyplot as plt
 class StateTests(unittest.TestCase):
   
   def setUp(self):
-    self.state = slam.State(np.array([1,1,1]), 0)
-    #                        R      0    1    2    3
-    self.state.x = np.array([1,1,1, 2,3, 4,5, 6,7, 0,0])
-    #                        0 1 2  3 4  5 6  7 8  9 10
+    #             R      0    1    2    3
+    x = np.array([1,1,1, 2,3, 4,5, 6,7, 0,0])
+    #             0 1 2  3 4  5 6  7 8  9 10
+    self.state = slam.State(np.array([1,1,1]), x.size-3)
+    self.state.x = x
 
   def test_landmark_exist_by_index(self):
     self.assertFalse(self.state.landmark_exist(3))
@@ -34,6 +35,11 @@ class StateTests(unittest.TestCase):
     y_polar, J_y = slam.scan(np.array([1, 1]))
     np.testing.assert_approx_equal(y_polar[0], 1.41421356)
     np.testing.assert_approx_equal(y_polar[1], 0.78539816)
+
+  def test_dynamic_landmark_init(self):
+    slot = self.state.new_slot
+    self.assertEqual(slot[0], 12)
+    self.assertEqual(slot[1], 13)
 
 
 class SlamProcessTests(unittest.TestCase):
