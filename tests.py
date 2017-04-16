@@ -11,25 +11,24 @@ from matplotlib import pyplot as plt
 class StateTests(unittest.TestCase):
   
   def setUp(self):
-    #             R      0    1    2    3
-    x = np.array([1,1,1, 2,3, 4,5, 6,7, 0,0])
-    #             0 1 2  3 4  5 6  7 8  9 10
-    self.state = slam.State(np.array([1,1,1]), x.size-3)
-    self.state.x = x
+    W = np.array([[2,3],
+                  [4,5],
+                  [6,7],
+                  [0,0]])
+
+    self.state = slam.State(np.array([1,1,1]))
+    for i, w in enumerate(W):
+      l = self.state.new_slot(i)
+      self.state.x[l] = w
 
   def test_landmark_exist_by_index(self):
-    self.assertFalse(self.state.landmark_exist(3))
+    self.assertFalse(self.state.landmark_exist(4))
     self.assertTrue(self.state.landmark_exist(1))
     self.assertTrue(self.state.landmark_exist(2))
 
   def test_landmark_find_by_index(self):
     l = self.state.landmark(1)
     self.assertTrue(all(l==[5, 6]), l)
-
-  def test_find_all_landmarks(self):
-    L = self.state.all_landmarks
-    self.assertTrue(all(L[0]==[3, 4]), L[0])
-    self.assertTrue(all(L[2]==[7, 8]), L[2])
 
   def test_scan(self):
     y_polar, J_y = slam.scan(np.array([1, 1]))

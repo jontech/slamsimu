@@ -152,7 +152,6 @@ def landmark_correction(y, y_i, state, S):
     x = state.x
     P = state.P
     l = state.landmark(y_i)
-
     rl = np.hstack([r, l])   # robot and landmark pointer in x
     
     x_y, J_r, J_y = observe(x[r], x[l]) # expectation measurement y = h(x)
@@ -185,12 +184,11 @@ def landmark_creation(y, i_y, state, S):
     y - landmark measurement (d, phi)
     S - noise system covariance
     """
+    l = state.new_slot(i_y)
     R = state.R
     P = state.P
     x = state.x
     r = state.r
-
-    l = state.landmark(i_y)
 
     x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
     P[l, :] = J_r.dot(P[r, :])
@@ -226,15 +224,24 @@ def update_robot(state, Q, x_r, J_r, J_n):
 class State:
     i_r = np.array([0, 1, 2])     # robot pose index in x
 
-    def __init__(self, R, n_W):
-        self.x = np.zeros([R.size + n_W])  # state vector as map means
+    def __init__(self, R):
+        self.x = np.zeros([R.size])  # state vector as map means
         self.P = np.zeros([self.x.size]*2) # state covariance
         self.x[self.i_r] = R               # add robot pose
         self.P[self.i_r, self.i_r] = 0     # add robot pose covariance
-        self.slots = []
+        self.slots = []                    # world-landmark mapping
+
+    def landmark(self, i):
+        return next(filter(lambda s: s[0] == i, self.slots))[1]
 
     def landmark_exist(self, i):
-        return all(self.x[self.landmark(i)]!=0)
+        # TODO registration check
+        try:
+            self.landmark(i)
+        except StopIteration:
+            return False
+        else:
+            return True
 
     def P_l(self, i):
         """get landmark cov matrix by landmark index"""
@@ -248,18 +255,6 @@ class State:
         l = np.array([n-2, n-1])
         self.slots.append((i, l))
         return l
-
-    @classmethod
-    def landmark(cls, i):
-        skip_R = len(cls.i_r)
-        n_l = i * 2
-        return np.array([n_l, n_l+1]) + skip_R
-
-    @property
-    def all_landmarks(self):
-        n_R = 3
-        n_L = int((len(self.x) - n_R) / 2)
-        return np.array(list(map(self.landmark, range(0, n_L))))
 
     @property
     def r(self):
@@ -291,7 +286,7 @@ def run(W,
     n = q*np.random.randn(1, 2)[0]
     v = s*np.random.randn(1, 2)[0]
 
-    state = State(n_W=W.size, R=R)
+    state = State(R=R)
 
     # run simulation
     for t in np.arange(1, steps):

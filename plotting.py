@@ -48,7 +48,7 @@ def make_ellip(l, P_l, N=16, n=1):
 def plots(R_res, states, W):
     state = states[-1:][0]
 
-    L = state.x[state.all_landmarks]
+    L = np.array(list(map(lambda i_L: state.x[i_L[1]], state.slots)))
     R = np.array(list(map(lambda s: s.R, states)))
 
     fig1 = plt.figure(1, figsize=(10, 4),)
@@ -65,8 +65,8 @@ def plots(R_res, states, W):
     for i, w in enumerate(W.T):
         ax.annotate(i, xy=w)
 
-    for i, l in enumerate(L):
-        ax.annotate(i, xy=l)
+    for i, l in state.slots:
+        ax.annotate(i, xy=state.x[l])
         #ax.plot(make_ellip(l, P_l(i)))
 
     ax.set_title("states x+W, steps={}".format(R_res.shape[0]+1))
