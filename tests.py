@@ -37,7 +37,7 @@ class StateTests(unittest.TestCase):
     np.testing.assert_approx_equal(y_polar[1], 0.78539816)
 
   def test_dynamic_landmark_init(self):
-    slot = self.state.new_slot
+    slot = self.state.new_slot(4)
     self.assertEqual(slot[0], 11)
     self.assertEqual(slot[1], 12)
     self.assertTrue(all(self.state.x[slot]==0))

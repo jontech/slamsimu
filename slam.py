@@ -231,6 +231,7 @@ class State:
         self.P = np.zeros([self.x.size]*2) # state covariance
         self.x[self.i_r] = R               # add robot pose
         self.P[self.i_r, self.i_r] = 0     # add robot pose covariance
+        self.slots = []
 
     def landmark_exist(self, i):
         return all(self.x[self.landmark(i)]!=0)
@@ -240,18 +241,19 @@ class State:
         l = self.landmark(i)
         return self.P[np.ix_(l, l)]
 
+    def new_slot(self, i):
+        self.x = np.pad(self.x, (0, 2), 'constant')
+        self.P = np.pad(self.P, ((0, 2), (0, 2)), 'constant')
+        n = self.x.shape[0]
+        l = np.array([n-2, n-1])
+        self.slots.append((i, l))
+        return l
+
     @classmethod
     def landmark(cls, i):
         skip_R = len(cls.i_r)
         n_l = i * 2
         return np.array([n_l, n_l+1]) + skip_R
-
-    @property
-    def new_slot(self):
-        self.x = np.pad(self.x, (0, 2), 'constant')
-        self.P = np.pad(self.P, ((0, 2), (0, 2)), 'constant')
-        n = self.x.shape[0]
-        return np.array([n-2, n-1])
 
     @property
     def all_landmarks(self):
