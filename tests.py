@@ -21,11 +21,6 @@ class StateTests(unittest.TestCase):
       l = self.state.new_slot(i)
       self.state.x[l] = w
 
-  def test_landmark_exist_by_index(self):
-    self.assertFalse(self.state.landmark_exist(4))
-    self.assertTrue(self.state.landmark_exist(1))
-    self.assertTrue(self.state.landmark_exist(2))
-
   def test_landmark_find_by_index(self):
     l = self.state.landmark(1)
     self.assertTrue(all(l==[5, 6]), l)
@@ -50,8 +45,8 @@ class SlamProcessTests(unittest.TestCase):
   def test_slam_simulation(self):
     res = list(slam.run(
       self.W,
-      steps=30,
-      u=np.array([10, 0]),
+      steps=20,
+      u=np.array([20, 0]),
       R=np.array([30, 40, 0]),
       q=np.array([.01, .01]),
       s=np.array([.25, 1*pi/180])))

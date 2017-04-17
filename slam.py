@@ -101,7 +101,7 @@ def scan(p):
 
 
 def inv_scan(y):
-    """ polar measure p to 2D point [x, y] with jacobian to p
+    """ polar meassurement y to 2D point [x, y] with jacobian to p
     """
     d, fi = y
     p = np.array([d*cos(fi), d*sin(fi)])
@@ -134,7 +134,6 @@ def inv_observe(r, y):
 
 def observe_landmarks(W, R, v=np.array([0, 0])):
     """observation ALL landmarks in world, return messurements Y"""
-    # TODO landmark asociation (same landmark filter)
     N = W.shape[1]               # world size
     Y = np.zeros([2, N])         # init observation measurements 
     for i in range(N):
@@ -147,11 +146,10 @@ def observe_landmarks(W, R, v=np.array([0, 0])):
     return Y
 
 
-def landmark_correction(y, y_i, state, S):
+def landmark_correction(y, l, state, S):
     r = state.r
     x = state.x
     P = state.P
-    l = state.landmark(y_i)
     rl = np.hstack([r, l])   # robot and landmark pointer in x
     
     x_y, J_r, J_y = observe(x[r], x[l]) # expectation measurement y = h(x)
@@ -221,6 +219,22 @@ def update_robot(state, Q, x_r, J_r, J_n):
     return state
 
 
+def registration_existing(state, y):
+    for w_i, l in state.slots:
+        y_x = observe(state.R, state.x[l])[0]
+        z = y - y_x
+
+        # angle correction
+        z[1] = z[1] - 2*pi if z[1] > pi else z[1]
+        z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
+
+        P_l = state.P[np.ix_(l, l)]
+
+        md = z.dot(np.linalg.inv(P_l)).dot(z)
+        if md < 9:
+            yield l
+            
+
 class State:
     i_r = np.array([0, 1, 2])     # robot pose index in x
 
@@ -233,15 +247,6 @@ class State:
 
     def landmark(self, i):
         return next(filter(lambda s: s[0] == i, self.slots))[1]
-
-    def landmark_exist(self, i):
-        # TODO registration check
-        try:
-            self.landmark(i)
-        except StopIteration:
-            return False
-        else:
-            return True
 
     def P_l(self, i):
         """get landmark cov matrix by landmark index"""
@@ -300,14 +305,13 @@ def run(W,
         # robot move prediction
         x_r, J_r, J_n = move(state.R, u=u, n=n)
         state = update_robot(deepcopy(state), Q, x_r, J_r, J_n)
-
-        for i, y in enumerate(Y.T):
+        for i_lw, y in enumerate(Y.T):
             if all(y!=np.inf):
-                # existing landmark correction
-                if state.landmark_exist(i):
-                    state = landmark_correction(y, i, deepcopy(state), S)
-                # new landmarks integration
+                for l in registration_existing(state, y):
+                    # correct all similar landmarks to messurement y
+                    state = landmark_correction(y, l, deepcopy(state), S)
                 else:
-                    state = landmark_creation(y, i, deepcopy(state), S)
+                    # new landmarks integration
+                    state = landmark_creation(y, i_lw, deepcopy(state), S)
 
         yield (R, state)
