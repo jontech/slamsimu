@@ -50,6 +50,14 @@ def transform_local(F, p):
     return p, J_f, J_p
 
 
+def zero_angles(a):
+    """ Make angle ``a'' around zero
+    """
+    a = a - 2*pi if a > pi else a
+    a = a + 2*pi if a < -pi else a
+    return a
+
+
 def move(r, u=np.array([0, 0]), n=np.zeros(2)):
     """ Move robot using control.
     r - current position
@@ -69,9 +77,8 @@ def move(r, u=np.array([0, 0]), n=np.zeros(2)):
     u = u + n
     # change robot rotation a
     a = a + u[1]
-    # negative angles?
-    a = a - 2*pi if a > pi else a
-    a = a + 2*pi if a < -pi else a
+    a = zero_angles(a)
+
     # position increment from control signal in global frame,
     # we transform only x coordinate as vel of u = [vel, angle]
     t, J_f, J_p = transform_global(r, np.array([u[0], 0]))
@@ -158,9 +165,7 @@ def landmark_correction(y, l, state, S):
 
     # meassurement inovation z with covariance Z
     z = y - x_y
-    # angle correction
-    z[1] = z[1] - 2*pi if z[1] > pi else z[1]
-    z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
+    z[1] = zero_angles(z[1])
     # inovation covariance with sensor noise
     Z = S + E       
 
@@ -220,13 +225,8 @@ def registration_existing(state, y):
     for w_i, l in state.slots:
         y_x = observe(state.R, state.x[l])[0]
         z = y - y_x
-
-        # angle correction
-        z[1] = z[1] - 2*pi if z[1] > pi else z[1]
-        z[1] = z[1] + 2*pi if z[1] < -pi else z[1]
-
+        z[1] = zero_angles(z[1])
         P_l = state.P[np.ix_(l, l)]
-
         md = z.dot(np.linalg.inv(P_l)).dot(z)
         if md < 9:
             yield l
