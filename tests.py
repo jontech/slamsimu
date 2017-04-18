@@ -49,12 +49,44 @@ class SlamProcessTests(unittest.TestCase):
       u=np.array([20, 0]),
       R=np.array([30, 40, 0]),
       q=np.array([.01, .01]),
-      s=np.array([.25, 1*pi/180])))
+      s=np.array([.01, 1*pi/180])))
+
     R_sim = np.array(list(map(lambda r: r[0], res)))
     states = list(map(lambda r: r[1], res))
 
     plotting.plots(R_sim, states, self.W)
 
+
+  def test_slam_simulation_one_landmark(self):
+    W = np.array([[10], 
+                  [40]])
+
+    res = list(slam.run(
+      W,
+      steps=2,
+      u=np.array([0, 0]),
+      R=np.array([0, 30, 0]),
+      q=np.array([.01, .01]),
+      s=np.array([.01, 1*pi/180])))
+
+
+class RegistrationTests(unittest.TestCase):
+  def setUp(self):
+    self.state = slam.State(np.array([-6.242e-03, 3.000e+01, 1.308e-02]))
+    l = self.state.new_slot(0)
+    self.state.x[l] = np.array([9.724e+00, 4.026e+01])
+    self.state.P = np.array([
+      [ 0.,     0.,     0.   ,  0.   ,  0.   ],
+      [ 0.,     0.,     0.   ,  0.   ,  0.   ],
+      [ 0.,     0.,     0.   , -0.001,  0.001],
+      [ 0.,     0.,    -0.001,  0.043, -0.04 ],
+      [ 0.,     0.,     0.001, -0.04 ,  0.038]])
+
+  def test_registration_registeret_landmark(self):
+    y, _, _ = slam.observe(self.state.R, np.array([9.724e+00, 4.026e+01]))
+    L = list(slam.registration_existing(self.state, y))
+    self.assertEqual(len(L), 1)
+    
 
 class PlottingTests(unittest.TestCase):
 

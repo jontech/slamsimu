@@ -168,11 +168,8 @@ def landmark_correction(y, l, state, S):
     K = P[:, rl].dot(J_ry.T).dot(np.linalg.inv(Z))
 
     # posteriori update
-    x = x + K.dot(z)
-    P = P - K.dot(Z).dot(K.T)
-
-    state.x = x
-    state.P = P
+    state.x = x + K.dot(z)
+    state.P = P - K.dot(Z).dot(K.T)
 
     return state
 
