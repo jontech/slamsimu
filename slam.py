@@ -5,6 +5,7 @@ from copy import deepcopy
 
 
 np.set_printoptions(precision=3)
+np.seterr(all='raise')
 
 
 def transform_global(F, p):
@@ -193,9 +194,8 @@ def landmark_creation(y, i_y, state, S):
     x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
     P[l, :] = J_r.dot(P[r, :])
     P[:, l] = P[l, :].T
-    P[np.ix_(l, l)] = J_r.dot(
-        P[np.ix_(r, r)]).dot(
-            J_r.T) + J_y.dot(S).dot(J_y.T)
+    P_rr = P[np.ix_(r, r)]
+    P[np.ix_(l, l)] = J_r.dot(P_rr).dot(J_r.T) + J_y.dot(S).dot(J_y.T)
 
     state.x = x
     state.P = P
@@ -212,8 +212,7 @@ def update_robot(state, Q, x_r, J_r, J_n):
     P_rr = P[np.ix_(r, r)]
     P[r, :] = J_r.dot(P[r, :])
     P[:, r] = P[r, :].T
-    P[np.ix_(r, r)] = J_r.dot(
-        P_rr).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
+    P[np.ix_(r, r)] = J_r.dot(P_rr).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
 
     state.x = x
     state.P = P
@@ -302,6 +301,7 @@ def run(W,
         # robot move prediction
         x_r, J_r, J_n = move(state.R, u=u, n=n)
         state = update_robot(deepcopy(state), Q, x_r, J_r, J_n)
+
         for i_lw, y in enumerate(Y.T):
             if all(y!=np.inf):
                 for l in registration_existing(state, y):
