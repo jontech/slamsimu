@@ -101,5 +101,16 @@ class PlottingTests(unittest.TestCase):
     # plt.show()
 
 
+class ObservationTests(unittest.TestCase):
+  def setUp(self):
+    self.r = np.array([ 250.,   40.,    0.])
+    self.p = np.array([   0.,   397.5])
+    self.v = np.array([ 0.88,  -0.019])
+
+  def test_observe_point(self):
+    y = slam.observe(self.r, self.p, v=self.v)
+    print(y)
+
+
 if __name__ == '__main__':
     unittest.main()
