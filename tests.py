@@ -22,7 +22,7 @@ class StateTests(unittest.TestCase):
       self.state.x[l] = w
 
   def test_landmark_find_by_index(self):
-    l = self.state.landmark(1)
+    l = self.state.landmarks(1)[0]
     self.assertTrue(all(l==[5, 6]), l)
 
   def test_scan(self):

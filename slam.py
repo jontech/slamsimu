@@ -8,6 +8,52 @@ np.set_printoptions(precision=3)
 np.seterr(all='raise')
 
 
+
+class State:
+    i_r = np.array([0, 1, 2])     # robot pose index in x
+
+    def __init__(self, R):
+        self.x = np.zeros([R.size])  # state vector as map means
+        self.P = np.zeros([self.x.size]*2) # state covariance
+        self.x[self.i_r] = R               # add robot pose
+        self.P[self.i_r, self.i_r] = 0     # add robot pose covariance
+        self.slots = []                    # world-landmark mapping
+
+    def landmarks(self, i):
+        slots = filter(lambda s: s[0] == i, self.slots)
+        return np.array(list(map(lambda s: s[1], slots)))
+
+    def P_l(self, i):
+        """get landmark cov matrix by landmark index"""
+        l = self.landmark(i)
+        return self.P[np.ix_(l, l)]
+
+    def new_slot(self, i):
+        self.x = np.pad(self.x, (0, 2), 'constant')
+        self.P = np.pad(self.P, ((0, 2), (0, 2)), 'constant')
+        n = self.x.shape[0]
+        l = np.array([n-2, n-1])
+        self.slots.append((i, l))
+        return l
+
+    @property
+    def r(self):
+        """robot pose indexes in x"""
+        return self.i_r
+
+    @property
+    def R(self):
+        return self.x[self.i_r]
+
+
+def zero_angles(a):
+    """ Make angle ``a'' around zero
+    """
+    a = a - 2*pi if a > pi else a
+    a = a + 2*pi if a < -pi else a
+    return a
+
+
 def transform_global(F, p):
     """ transform point from frame F to global frame.
     F = [x, y, theta], p = [x, y]
@@ -49,14 +95,6 @@ def transform_local(F, p):
     ])
     J_p = R.T
     return p, J_f, J_p
-
-
-def zero_angles(a):
-    """ Make angle ``a'' around zero
-    """
-    a = a - 2*pi if a > pi else a
-    a = a + 2*pi if a < -pi else a
-    return a
 
 
 def move(r, u=np.array([0, 0]), n=np.zeros(2)):
@@ -237,42 +275,6 @@ def registration_existing(state, y):
                 yield l
             
 
-class State:
-    i_r = np.array([0, 1, 2])     # robot pose index in x
-
-    def __init__(self, R):
-        self.x = np.zeros([R.size])  # state vector as map means
-        self.P = np.zeros([self.x.size]*2) # state covariance
-        self.x[self.i_r] = R               # add robot pose
-        self.P[self.i_r, self.i_r] = 0     # add robot pose covariance
-        self.slots = []                    # world-landmark mapping
-
-    def landmark(self, i):
-        return next(filter(lambda s: s[0] == i, self.slots))[1]
-
-    def P_l(self, i):
-        """get landmark cov matrix by landmark index"""
-        l = self.landmark(i)
-        return self.P[np.ix_(l, l)]
-
-    def new_slot(self, i):
-        self.x = np.pad(self.x, (0, 2), 'constant')
-        self.P = np.pad(self.P, ((0, 2), (0, 2)), 'constant')
-        n = self.x.shape[0]
-        l = np.array([n-2, n-1])
-        self.slots.append((i, l))
-        return l
-
-    @property
-    def r(self):
-        """robot pose indexes in x"""
-        return self.i_r
-
-    @property
-    def R(self):
-        return self.x[self.i_r]
-
-
 def run(W,
         steps=10,
         R=np.array([0, 0, 0]),
@@ -310,9 +312,11 @@ def run(W,
 
         for i_lw, y in enumerate(Y.T):
             if all(y!=np.inf):
-                for l in registration_existing(state, y):
-                    # correct all similar landmarks to messurement y
-                    state = landmark_correction(y, l, deepcopy(state), S)
+                landmarks = state.landmarks(i_lw)
+                if len(landmarks) > 0:
+                    for l in landmarks: 
+                        # correct all similar landmarks to messurement y
+                        state = landmark_correction(y, l, deepcopy(state), S)
                 else:
                     # new landmarks integration
                     state = landmark_creation(y, i_lw, deepcopy(state), S)
