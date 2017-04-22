@@ -109,8 +109,8 @@ class ObservationTests(unittest.TestCase):
     p = np.array([ 250.,   437.5])
     v = np.array([ 0,  0])
 
-    y = slam.observe(r, p, v=v)
-    print(y)
+    with self.assertRaises(FloatingPointError):
+      slam.observe(r, p, v=v)
 
 
 if __name__ == '__main__':
