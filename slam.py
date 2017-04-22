@@ -145,12 +145,14 @@ def observe_landmarks(W, R, v=np.array([0, 0])):
     N = W.shape[1]               # world size
     Y = np.zeros([2, N])         # init observation measurements 
     for i in range(N):
-        y, _, _ = observe(R, W[:, i], v=v)
-
-        # simulate sensor with angle and range
-        p, fi = y
-        Y[:, i] = y if p < 100 and fi > -pi/2 and fi < pi/2 else np.inf
-
+        try:
+            y, _, _ = observe(R, W[:, i], v=v)
+        except FloatingPointError as e:
+            print(observe_landmarks, e)
+        else:
+            # simulate sensor with angle and range
+            p, fi = y
+            Y[:, i] = y if p < 100 and fi > -pi/2 and fi < pi/2 else np.inf
     return Y
 
 
@@ -222,13 +224,17 @@ def update_robot(state, Q, x_r, J_r, J_n):
 
 def registration_existing(state, y):
     for w_i, l in state.slots:
-        y_x = observe(state.R, state.x[l])[0]
-        z = y - y_x
-        z[1] = zero_angles(z[1])
-        P_l = state.P[np.ix_(l, l)]
-        md = z.dot(np.linalg.inv(P_l)).dot(z)
-        if md < 9:
-            yield l
+        try:
+            y_x = observe(state.R, state.x[l])[0]
+        except FloatingPointError as e:
+            print(registration_existing, e)
+        else:
+            z = y - y_x
+            z[1] = zero_angles(z[1])
+            P_l = state.P[np.ix_(l, l)]
+            md = z.dot(np.linalg.inv(P_l)).dot(z)
+            if md < 9:
+                yield l
             
 
 class State:
