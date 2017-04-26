@@ -43,18 +43,19 @@ class SlamProcessTests(unittest.TestCase):
     self.W = cloister.T
 
   def test_slam_simulation(self):
-    res = list(slam.run(
-      self.W,
+    params = dict(
       steps=20,
       u=np.array([20, 0]),
       R=np.array([30, 40, 0]),
-      q=np.array([.01, .01]),
-      s=np.array([.01, 1*pi/180])))
+      q=np.array([.2, .05]),
+      s=np.array([.1, 2*pi/180]))
+
+    res = list(slam.run(self.W, **params))
 
     R_sim = np.array(list(map(lambda r: r[0], res)))
     states = list(map(lambda r: r[1], res))
 
-    plotting.plots(R_sim, states, self.W)
+    plotting.plots(R_sim, states, self.W, params)
 
 
   def test_slam_simulation_one_landmark(self):
