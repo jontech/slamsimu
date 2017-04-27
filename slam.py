@@ -183,9 +183,9 @@ def observe_landmarks(W, R, s=np.array([0, 0])):
     """observation ALL landmarks in world, return messurements Y"""
     N = W.shape[1]               # world size
     Y = np.zeros([2, N])         # init observation measurements
-    v = s*np.random.randn(1, 2)[0]
     for i in range(N):
         try:
+            v = s*np.random.randn(1, 2)[0]
             y, _, _ = observe(R, W[:, i], v=v)
         except FloatingPointError as e:
             print(observe_landmarks, e)
