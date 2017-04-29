@@ -113,8 +113,6 @@ def move(r, u=np.array([0, 0]), q=np.zeros(2)):
 
     """
     a = r[2]
-    n = q*np.random.randn(1, 2)[0]
-    u = u + n
     # change robot rotation a
     a = a + u[1]
     a = zero_angles(a)
@@ -307,7 +305,8 @@ def run(W,
         # Estimator (EKF)
 
         # robot move prediction
-        x_r, J_r, J_n = move(state.R, u=u, q=q)
+        n = q*np.random.randn(1, 2)[0]
+        x_r, J_r, J_n = move(state.R, u=u+n)
         state = update_robot(deepcopy(state), Q, x_r, J_r, J_n)
 
         for i_lw, y in enumerate(Y.T):
@@ -321,4 +320,4 @@ def run(W,
                     # new landmarks integration
                     state = landmark_creation(y, i_lw, deepcopy(state), S)
 
-        yield (R, state)
+        yield (R, state, n)

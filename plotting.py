@@ -45,14 +45,19 @@ def make_ellip(l, P_l, N=16, n=1):
     return x, y
 
 
-def plots(R_res, states, W, params):
+def sim_plots(res, W, params):
+    R_res = np.array(list(map(lambda r: r[0], res)))
+    states = list(map(lambda r: r[1], res))
+
     state = states[-1:][0]
 
+    N = np.array(list(map(lambda r: r[2], res)))
     L = np.array(list(map(lambda i_L: state.x[i_L[1]], state.slots)))
     R = np.array(list(map(lambda s: s.R, states)))
 
-    fig1 = plt.figure(1, figsize=(10, 4),)
-    ax = fig1.add_subplot(1, 2, 1)
+    fig1 = plt.figure(1, figsize=(10, 8),)
+
+    ax = fig1.add_subplot(2, 2, 1)
     ax.grid(True)
 
     ax.plot(
@@ -75,10 +80,14 @@ def plots(R_res, states, W, params):
     plt.ylim((-100, 600))
 
     # covariance
-    plt.subplot(1, 2, 2)
+    plt.subplot(2, 2, 2)
     plt.pcolor(state.P)
     plt.colorbar()
     plt.grid(True)
     plt.title("P")
 
+    plt.subplot(2, 2, 3)
+    plt.plot(N)
+    plt.title("Robot move [n=[x, y]]")
+    
     plt.show()

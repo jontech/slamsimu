@@ -52,10 +52,7 @@ class SlamProcessTests(unittest.TestCase):
 
     res = list(slam.run(self.W, **params))
 
-    R_sim = np.array(list(map(lambda r: r[0], res)))
-    states = list(map(lambda r: r[1], res))
-
-    plotting.plots(R_sim, states, self.W, params)
+    plotting.sim_plots(res, self.W, params)
 
 
   def test_slam_simulation_one_landmark(self):
