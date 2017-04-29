@@ -105,10 +105,9 @@ class ObservationTests(unittest.TestCase):
     """handle division by zero in observe jacobian when x same"""
     r = np.array([ 250.,   40.,    0.])
     p = np.array([ 250.,   437.5])
-    v = np.array([ 0,  0])
 
     with self.assertRaises(FloatingPointError):
-      slam.observe(r, p, v=v)
+      slam.observe(r, p)
 
 
 if __name__ == '__main__':

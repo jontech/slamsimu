@@ -157,7 +157,7 @@ def inv_scan(y):
     return p, J_y
 
 
-def observe(r, p, v=np.zeros(2)):
+def observe(r, p):
     """ h(x) Returns measurement in polar coordinates [d, fi] to point p.
     v - meassurement noise
     """
@@ -165,7 +165,7 @@ def observe(r, p, v=np.zeros(2)):
     y, J_y = scan(p)           # take measurement to robot-local point
     J_yr = J_y.dot(J_r)         # chain with robot frame
     J_yp = J_y.dot(J_p)         # chain with point
-    return y + v, J_yr, J_yp
+    return y, J_yr, J_yp
 
 
 def inv_observe(r, y):
@@ -181,17 +181,20 @@ def observe_landmarks(W, R, s=np.array([0, 0])):
     """observation ALL landmarks in world, return messurements Y"""
     N = W.shape[1]               # world size
     Y = np.zeros([2, N])         # init observation measurements
+    V = []
     for i in range(N):
         try:
-            v = s*np.random.randn(1, 2)[0]
-            y, _, _ = observe(R, W[:, i], v=v)
+            y, _, _ = observe(R, W[:, i])
         except FloatingPointError as e:
             print(observe_landmarks, e)
         else:
+            v = s*np.random.randn(1, 2)[0]
+            y = y + v
+            V.append(v)
             # simulate sensor with angle and range
             p, fi = y
             Y[:, i] = y if p < 100 and fi > -pi/2 and fi < pi/2 else np.inf
-    return Y
+    return Y, np.array(V)
 
 
 def landmark_correction(y, l, state, S):
@@ -300,8 +303,7 @@ def run(W,
      
         # Simulation actual robot move and observe
         R, _, _ = move(R, u=u)
-        Y = observe_landmarks(W, R, s=s)
-
+        Y, V = observe_landmarks(W, R, s=s)
         # Estimator (EKF)
 
         # robot move prediction
@@ -320,4 +322,4 @@ def run(W,
                     # new landmarks integration
                     state = landmark_creation(y, i_lw, deepcopy(state), S)
 
-        yield (R, state, n)
+        yield (R, state, n, V)

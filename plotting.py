@@ -46,14 +46,14 @@ def make_ellip(l, P_l, N=16, n=1):
 
 
 def sim_plots(res, W, params):
-    R_res = np.array(list(map(lambda r: r[0], res)))
     states = list(map(lambda r: r[1], res))
-
     state = states[-1:][0]
 
+    R = np.array(list(map(lambda r: r[0], res)))
     N = np.array(list(map(lambda r: r[2], res)))
+    V = np.array(list(map(lambda r: r[3][:, 1], res)))
     L = np.array(list(map(lambda i_L: state.x[i_L[1]], state.slots)))
-    R = np.array(list(map(lambda s: s.R, states)))
+    R_ekf = np.array(list(map(lambda s: s.R, states)))
 
     fig1 = plt.figure(1, figsize=(10, 8),)
 
@@ -61,10 +61,10 @@ def sim_plots(res, W, params):
     ax.grid(True)
 
     ax.plot(
-        R_res[:, 0], R_res[:, 1], 'o',
+        R[:, 0], R[:, 1], 'o',
         W[0, :], W[1, :], '.',
         L[:, 0], L[:, 1], '+',
-        R[:, 0], R[:, 1], 'o'
+        R_ekf[:, 0], R_ekf[:, 1], 'o'
     )
 
     for i, w in enumerate(W.T):
@@ -90,4 +90,10 @@ def sim_plots(res, W, params):
     plt.plot(N)
     plt.title("Robot move [n=[x, y]]")
     
+
+    box_ax = fig1.add_subplot(2, 2, 4)
+    box_ax.boxplot(V,
+                   notch=True,  # notch shape
+                   vert=True)   # vertical box aligmnent
+
     plt.show()
