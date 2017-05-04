@@ -92,7 +92,7 @@ def sim_plots(res, W, params):
     
 
     box_ax = fig1.add_subplot(2, 2, 4)
-    box_ax.boxplot(V,
+    box_ax.boxplot(V.T,
                    notch=True,  # notch shape
                    vert=True)   # vertical box aligmnent
 
