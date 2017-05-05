@@ -101,6 +101,18 @@ class PlottingTests(unittest.TestCase):
 
 class ObservationTests(unittest.TestCase):
 
+  def test_scan_point(self):
+    p = np.array([2, 3])
+    y, J = slam.scan(p)
+
+    self.assertTrue(
+      np.allclose(y, np.array([ 3.606,  0.983]), atol=0.001), y)
+
+    self.assertTrue(
+      np.allclose(J, np.array([[ 0.555,  0.832],
+                               [-0.231,  0.154]]), atol=0.001), J)
+
+ 
   def test_observe_point_at_robot_x(self):
     """handle division by zero in observe jacobian when x same"""
     r = np.array([ 250.,   40.,    0.])
