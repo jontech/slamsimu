@@ -139,8 +139,8 @@ def scan(p):
     d = sqrt(x**2 + y**2)
     fi = atan2(y, x)
     J_p = np.array([
-        [x / sqrt(x**2 + y**2),          y / sqrt(x**2 + y**2)],
-        [-y / (x**2*(y**2 / x**2 + 1)),  1 / (x*(y**2 / x**2 + 1))]
+        [x / sqrt(x**2 + y**2), y / sqrt(x**2 + y**2)],
+        [-y / (x**2 + y**2),    x / (y**2 + x**2)]
     ])
     return np.array([d, fi]), J_p
 
@@ -183,17 +183,13 @@ def observe_landmarks(W, R, s=np.array([0, 0])):
     Y = np.zeros([2, N])         # init observation measurements
     V = []
     for i in range(N):
-        try:
-            y, _, _ = observe(R, W[:, i])
-        except FloatingPointError as e:
-            print(observe_landmarks, e)
-        else:
-            v = s*np.random.randn(1, 2)[0]
-            y = y + v
-            V.append(v)
-            # simulate sensor with angle and range
-            p, fi = y
-            Y[:, i] = y if p < 100 and fi > -pi/2 and fi < pi/2 else np.inf
+        y, _, _ = observe(R, W[:, i])
+        v = s*np.random.randn(1, 2)[0]
+        y = y + v
+        V.append(v)
+        # simulate sensor with angle and range
+        p, fi = y
+        Y[:, i] = y if p < 100 and fi > -pi/2 and fi < pi/2 else np.inf
     return Y, np.array(V)
 
 
@@ -265,17 +261,13 @@ def update_robot(state, Q, x_r, J_r, J_n):
 
 def registration_existing(state, y):
     for w_i, l in state.slots:
-        try:
-            y_x = observe(state.R, state.x[l])[0]
-        except FloatingPointError as e:
-            print(registration_existing, e)
-        else:
-            z = y - y_x
-            z[1] = zero_angles(z[1])
-            P_l = state.P[np.ix_(l, l)]
-            md = z.dot(np.linalg.inv(P_l)).dot(z)
-            if md < 9:
-                yield l
+        y_x = observe(state.R, state.x[l])[0]
+        z = y - y_x
+        z[1] = zero_angles(z[1])
+        P_l = state.P[np.ix_(l, l)]
+        md = z.dot(np.linalg.inv(P_l)).dot(z)
+        if md < 9:
+            yield l
             
 
 def run(W,

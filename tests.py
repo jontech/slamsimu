@@ -112,15 +112,6 @@ class ObservationTests(unittest.TestCase):
       np.allclose(J, np.array([[ 0.555,  0.832],
                                [-0.231,  0.154]]), atol=0.001), J)
 
- 
-  def test_observe_point_at_robot_x(self):
-    """handle division by zero in observe jacobian when x same"""
-    r = np.array([ 250.,   40.,    0.])
-    p = np.array([ 250.,   437.5])
-
-    with self.assertRaises(FloatingPointError):
-      slam.observe(r, p)
-
 
 if __name__ == '__main__':
     unittest.main()

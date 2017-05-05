@@ -88,7 +88,7 @@ def sim_plots(res, W, params):
 
     plt.subplot(2, 2, 3)
     plt.plot(N)
-    plt.title("Robot move [n=[x, y]]")
+    plt.title("n")
     
 
     box_ax = fig1.add_subplot(2, 2, 4)
