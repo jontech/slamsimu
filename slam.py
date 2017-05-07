@@ -98,19 +98,11 @@ def transform_local(F, p):
 
 
 def move(r, u=np.array([0, 0]), q=np.zeros(2)):
-    """ Move robot using control.
+    """ Robot motion simulation and odometry
     r - current position
     u - control (distance, angle in radians), default not moving
     n - motion noise, default no noise
-
-    Returns updated robot position applying control
-    u = [vel, angle] to robot
-    pose r = [x, y, th] with noise vector n for u.
-
-    1) apply control noise
-    2) update robot angle by u 
-    3) update robot position in global frame by u
-
+    returns new robot odometry-like pose
     """
     a = r[2]
     # change robot rotation a
@@ -178,7 +170,8 @@ def inv_observe(r, y):
 
 
 def observe_landmarks(W, R, s=np.array([0, 0])):
-    """observation ALL landmarks in world, return messurements Y"""
+    """observation simulation, return messurements Y.
+    """
     N = W.shape[1]               # world size
     Y = np.zeros([2, N])         # init observation measurements
     V = []
@@ -194,6 +187,8 @@ def observe_landmarks(W, R, s=np.array([0, 0])):
 
 
 def landmark_correction(y, l, state, S):
+    """ x, P correction by observed landmarks.
+    """
     r = state.r
     x = state.x
     P = state.P
@@ -294,8 +289,10 @@ def run(W,
     for t in np.arange(1, steps):
      
         # Simulation actual robot move and observe
+
         R, _, _ = move(R, u=u)
         Y, V = observe_landmarks(W, R, s=s)
+
         # Estimator (EKF)
 
         # robot move prediction
