@@ -56,15 +56,20 @@ def sim_plots(res, W, params):
     R_ekf = np.array(list(map(lambda s: s.R, states)))
 
     fig1 = plt.figure(1, figsize=(10, 8),)
+    fig1.suptitle("EKF-SLAM simulation steps={steps}".format(**params), fontsize=20)
+    fig1.hspace = 30
 
     ax = fig1.add_subplot(2, 2, 1)
     ax.grid(True)
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_title("q={q}, s={s}".format(**params))
 
     ax.plot(
         R[:, 0], R[:, 1], 'o',
         W[0, :], W[1, :], '.',
         L[:, 0], L[:, 1], '+',
-        R_ekf[:, 0], R_ekf[:, 1], 'o'
+        R_ekf[:, 0], R_ekf[:, 1], 'o',
     )
 
     for i, w in enumerate(W.T):
@@ -73,8 +78,6 @@ def sim_plots(res, W, params):
     for i, l in state.slots:
         ax.annotate(i, xy=state.x[l])
         #ax.plot(make_ellip(l, P_l(i)))
-
-    ax.set_title("q={q}, s={s}".format(**params))
 
     plt.xlim((-100, 600))
     plt.ylim((-100, 600))
@@ -85,15 +88,21 @@ def sim_plots(res, W, params):
     plt.colorbar()
     plt.grid(True)
     plt.title("P")
+    plt.xlabel("[R M]")
+    plt.ylabel("[R M]")
 
+    # motion noise
     plt.subplot(2, 2, 3)
     plt.plot(N)
     plt.title("n")
+    plt.xlabel("step")
+    plt.ylabel("magnitude")
     
 
-    box_ax = fig1.add_subplot(2, 2, 4)
-    box_ax.boxplot(V.T,
-                   notch=True,  # notch shape
-                   vert=True)   # vertical box aligmnent
+    # box_ax = fig1.add_subplot(2, 2, 4)
+    # box_ax.boxplot(V.T,
+    #                notch=True,  # notch shape
+    #                vert=True)   # vertical box aligmnent
 
+    plt.subplots_adjust(hspace=0.3)
     plt.show()
