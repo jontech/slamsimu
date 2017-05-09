@@ -97,7 +97,7 @@ def transform_local(F, p):
     return p, J_f, J_p
 
 
-def move(r, u=np.array([0, 0]), q=np.zeros(2)):
+def move(r, u=np.array([0, 0])):
     """ Robot motion simulation and odometry
     r - current position
     u - control (distance, angle in radians), default not moving
@@ -112,14 +112,17 @@ def move(r, u=np.array([0, 0]), q=np.zeros(2)):
     # position increment from control signal in global frame,
     # we transform only x coordinate as vel of u = [vel, angle]
     t, J_f, J_p = transform_global(r, np.array([u[0], 0]))
+
     J_r = np.vstack([
         J_f,
         [0, 0, 1]
     ])
+
     J_n = np.vstack([
-        np.vstack([J_p[:, 0], np.zeros([1, 2])]).T,
+        np.vstack([J_p[:, 0], [0, 0]]),
         [0, 1]
     ])
+
     return np.hstack([t, a]), J_r, J_n
 
 
@@ -298,6 +301,7 @@ def run(W,
         # robot move prediction
         n = q*np.random.randn(1, 2)[0]
         x_r, J_r, J_n = move(state.R, u=u+n)
+
         state = update_robot(deepcopy(state), Q, x_r, J_r, J_n)
 
         for i_lw, y in enumerate(Y.T):
