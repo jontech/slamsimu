@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 from math import pi
+from scipy.spatial import distance
 
 
 def animations(R_res):
@@ -54,6 +55,8 @@ def sim_plots(res, W, params):
     V = np.array(list(map(lambda r: r[3][:, 1], res)))
     L = np.array(list(map(lambda i_L: state.x[i_L[1]], state.slots)))
     R_ekf = np.array(list(map(lambda s: s.R, states)))
+    L_dist = np.array(list(map(lambda s: (s[0], distance.euclidean(
+        state.x[s[1]], W[:, s[0]])), state.slots)))
 
     fig1 = plt.figure(1, figsize=(10, 8),)
     fig1.suptitle("EKF-SLAM simulation steps={steps}".format(**params), fontsize=20)
@@ -98,6 +101,15 @@ def sim_plots(res, W, params):
     plt.xlabel("step")
     plt.ylabel("magnitude")
     
+
+    # dist plot
+    plt.subplot(2, 2, 4)
+    markerline, stemlines, baseline = plt.stem(L_dist[:, 0], L_dist[:, 1])
+    plt.setp(baseline, 'color', 'r', 'linewidth', 2)
+    plt.grid(True)
+    plt.title("dist(L, w)")
+    plt.ylabel("dist")
+    plt.xlabel("index")
 
     # box_ax = fig1.add_subplot(2, 2, 4)
     # box_ax.boxplot(V.T,
