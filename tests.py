@@ -44,7 +44,7 @@ class SlamProcessTests(unittest.TestCase):
 
   def test_slam_simulation(self):
     params = dict(
-      steps=20,
+      steps=3,
       u=np.array([20, 0]),
       R=np.array([30, 40, 0]),
       q=np.array([.2, .05]),
@@ -53,19 +53,6 @@ class SlamProcessTests(unittest.TestCase):
     res = list(slam.run(self.W, **params))
 
     plotting.sim_plots(res, self.W, params)
-
-
-  def test_slam_simulation_one_landmark(self):
-    W = np.array([[10], 
-                  [40]])
-
-    res = list(slam.run(
-      W,
-      steps=2,
-      u=np.array([0, 0]),
-      R=np.array([0, 30, 0]),
-      q=np.array([.01, .01]),
-      s=np.array([.01, 1*pi/180])))
 
 
 class RegistrationTests(unittest.TestCase):
