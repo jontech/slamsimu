@@ -314,8 +314,7 @@ def run(W,
                 if len(landmarks) > 0:
                     for l in landmarks: 
                         # correct all similar landmarks to messurement y
-                        #state = landmark_correction(y, l, deepcopy(state), S)
-                        pass
+                        state = landmark_correction(y, l, deepcopy(state), S)
                 else:
                     # new landmarks integration
                     state = landmark_creation(y, i_lw, deepcopy(state), S)
