@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
+from matplotlib.gridspec import GridSpec
 import numpy as np
 from math import pi
 from scipy.spatial import distance
@@ -62,18 +63,18 @@ def sim_plots(res, W, params):
     state = states[-1:][0]
 
     R = np.array(list(map(lambda r: r[0], res)))
-    N = np.array(list(map(lambda r: r[2], res)))
-    V = np.array(list(map(lambda r: r[3][:, 1], res)))
     L = np.array(list(map(lambda i_L: state.x[i_L[1]], state.slots)))
     R_ekf = np.array(list(map(lambda s: s.R, states)))
     L_dist = np.array(list(map(lambda s: (s[0], distance.euclidean(
         state.x[s[1]], W[:, s[0]])), state.slots)))
 
-    fig1 = plt.figure(1, figsize=(10, 8),)
+    gs = GridSpec(3, 3)
+
+    fig1 = plt.figure(1, figsize=(10, 10),)
     fig1.suptitle("EKF-SLAM simulation steps={steps}".format(**params), fontsize=20)
     fig1.hspace = 30
 
-    ax = fig1.add_subplot(2, 2, 1)
+    ax = fig1.add_subplot(gs[:-1, :])
     ax.grid(True)
     ax.set_xlabel("x")
     ax.set_ylabel("y")
@@ -108,36 +109,26 @@ def sim_plots(res, W, params):
     plt.xlim((-100, 600))
     plt.ylim((-100, 600))
 
-    # covariance
-    plt.subplot(2, 2, 2)
-    plt.pcolor(state.P)
-    plt.colorbar()
-    plt.grid(True)
-    plt.title("P")
-    plt.xlabel("[R M]")
-    plt.ylabel("[R M]")
+    def plot_covariance():
+        plt.subplot(gs[-1, :-1])
+        plt.pcolor(state.P)
+        plt.colorbar()
+        plt.grid(True)
+        plt.title("P")
+        plt.xlabel("[R M]")
+        plt.ylabel("[R M]")
 
-    # motion noise
-    plt.subplot(2, 2, 3)
-    plt.plot(N)
-    plt.title("n")
-    plt.xlabel("step")
-    plt.ylabel("magnitude")
-    
+    def plot_landmark_dist():
+        plt.subplot(gs[-1, -1])
+        markerline, stemlines, baseline = plt.stem(L_dist[:, 0], L_dist[:, 1])
+        plt.setp(baseline, 'color', 'r', 'linewidth', 2)
+        plt.grid(True)
+        plt.title("dist(L, w)")
+        plt.ylabel("dist")
+        plt.xlabel("index")
 
-    # dist plot
-    plt.subplot(2, 2, 4)
-    markerline, stemlines, baseline = plt.stem(L_dist[:, 0], L_dist[:, 1])
-    plt.setp(baseline, 'color', 'r', 'linewidth', 2)
-    plt.grid(True)
-    plt.title("dist(L, w)")
-    plt.ylabel("dist")
-    plt.xlabel("index")
-
-    # box_ax = fig1.add_subplot(2, 2, 4)
-    # box_ax.boxplot(V.T,
-    #                notch=True,  # notch shape
-    #                vert=True)   # vertical box aligmnent
+    plot_covariance()
+    plot_landmark_dist()
 
     plt.subplots_adjust(hspace=0.3)
     plt.show()
