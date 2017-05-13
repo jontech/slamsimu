@@ -44,11 +44,11 @@ class SlamProcessTests(unittest.TestCase):
 
   def test_slam_simulation(self):
     params = dict(
-      steps=3,
+      steps=2,
       u=np.array([20, 0]),
       R=np.array([30, 40, 0]),
-      q=np.array([.2, .05]),
-      s=np.array([.1, 2*pi/180]))
+      q=np.array([.01, 1*pi/180]),
+      s=np.array([.01, 1*pi/180]))
 
     res = list(slam.run(self.W, **params))
 
@@ -82,12 +82,10 @@ class PlottingTests(unittest.TestCase):
                   [ 1,  2]])
 
     X, Y = make_ellip(L, P)
-
-    plt.xlim((0, 5))
-    plt.ylim((0, 5))
-    plt.grid()
-    plt.plot(X, Y)
-    plt.show()
+    
+    # assert ellipse centre
+    self.assertTrue(np.isclose(np.mean(X), 2.90598272437), np.mean(X))
+    self.assertTrue(np.isclose(np.mean(Y), 2.9468896756), np.mean(Y))
 
 
 class ObservationTests(unittest.TestCase):
