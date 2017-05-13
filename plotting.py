@@ -101,9 +101,8 @@ def sim_plots(res, W, params):
     def annotate_robot():
         for state in states:
             X, Y = make_ellip(state.R, state.P_r_pos)
-            print(X)
             ax.plot(X, Y, 'b')
-            return ax
+        return ax
     ax = annotate_robot()
 
     plt.xlim((-100, 600))
