@@ -86,7 +86,7 @@ def sim_plots(res, W, params):
         R_ekf[:, 0], R_ekf[:, 1], 'o',
     )
 
-    def annotate():
+    def annotate_landmarks():
         for i, w in enumerate(W.T):
             ax.annotate(i, xy=w)
 
@@ -96,8 +96,15 @@ def sim_plots(res, W, params):
             X, Y = make_ellip(L, state.P_l(i))
             ax.plot(X, Y, 'b')
         return ax
+    ax = annotate_landmarks()
 
-    ax = annotate()
+    def annotate_robot():
+        for state in states:
+            X, Y = make_ellip(state.R, state.P_r_pos)
+            print(X)
+            ax.plot(X, Y, 'b')
+            return ax
+    ax = annotate_robot()
 
     plt.xlim((-100, 600))
     plt.ylim((-100, 600))

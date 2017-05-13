@@ -10,13 +10,13 @@ np.seterr(all='raise')
 
 
 class State:
-    i_r = np.array([0, 1, 2])     # robot pose index in x
+    r = np.array([0, 1, 2])     # robot pose index in x
 
     def __init__(self, R):
-        self.x = np.zeros([R.size])  # state vector as map means
-        self.P = np.zeros([self.x.size]*2) # state covariance
-        self.x[self.i_r] = R               # add robot pose
-        self.P[self.i_r, self.i_r] = 0     # add robot pose covariance
+        self.r_n = self.r.size
+        self.x = np.zeros([self.r_n])  # state vector as map means
+        self.P = np.zeros([self.r_n]*2) # state covariance
+        self.x[self.r] = R               # add robot pose
         self.slots = []                    # world-landmark mapping
 
     def landmarks(self, i):
@@ -31,6 +31,15 @@ class State:
         l = self.landmark(i)
         return self.P[np.ix_(l, l)]
 
+    @property
+    def P_r(self):
+        return self.P[np.ix_(self.r, self.r)]
+
+    @property
+    def P_r_pos(self):
+        r_pos = self.r[0:2]
+        return self.P[np.ix_(r_pos, r_pos)]
+
     def new_slot(self, i):
         self.x = np.pad(self.x, (0, 2), 'constant')
         self.P = np.pad(self.P, ((0, 2), (0, 2)), 'constant')
@@ -40,13 +49,8 @@ class State:
         return l
 
     @property
-    def r(self):
-        """robot pose indexes in x"""
-        return self.i_r
-
-    @property
     def R(self):
-        return self.x[self.i_r]
+        return self.x[self.r]
 
 
 def zero_angles(a):
