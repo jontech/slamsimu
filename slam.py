@@ -199,14 +199,12 @@ def landmark_correction(y, l, state, S):
     
     x_y, J_r, J_y = observe(x[r], x[l]) # expectation measurement y = h(x)
     J_ry = np.hstack([J_r, J_y])      # expectation jacobian
-    E = J_ry.dot(P[np.ix_(rl, rl)]).dot(J_ry.T) # expectation
 
     # meassurement inovation z with covariance Z
     z = y - x_y
     z[1] = zero_angles(z[1])
-    # inovation covariance with sensor noise
-    Z = S + E       
-
+    # inovation expectation covariance with sensor noise covariance
+    Z = J_ry.dot(P[np.ix_(rl, rl)]).dot(J_ry.T) + S
     # Kalman gain P*H'*Z^-1
     K = P[:, rl].dot(J_ry.T).dot(np.linalg.inv(Z))
 
@@ -289,7 +287,7 @@ def run(W,
     state = State(R=R)
 
     # run simulation
-    for t in np.arange(1, steps):
+    for t in np.arange(0, steps):
      
         # Simulation actual robot move and observe
 
