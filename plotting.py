@@ -45,9 +45,6 @@ def make_ellip(l, P, n=16, sigma=1):
     U, s, Vh = np.linalg.svd(P, full_matrices=True)
     V = Vh.T
     d = np.sqrt(s)
-    
-    print(U, d, V)
-
     b = np.identity(2) * d
 
     # build ellipse: n-sigma, rotate, align circle
