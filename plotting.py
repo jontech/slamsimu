@@ -78,7 +78,7 @@ def sim_plots(res, W, params):
     ax.grid(True)
     ax.set_xlabel("x")
     ax.set_ylabel("y")
-    ax.set_title("q={q}, s={s}".format(**params))
+    ax.set_title("R={R}, q={q}, s={s}".format(**params))
 
     ax.plot(
         R[:, 0], R[:, 1], 'o',
