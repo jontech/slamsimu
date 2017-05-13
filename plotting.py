@@ -101,7 +101,7 @@ def sim_plots(res, W, params):
     def annotate_robot():
         for state in states:
             X, Y = make_ellip(state.R, state.P_r_pos, sigma=3)
-            ax.plot(X, Y, 'b')
+            ax.plot(X, Y, 'r')
         return ax
     ax = annotate_robot()
 
