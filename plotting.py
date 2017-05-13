@@ -34,16 +34,30 @@ def animations(R_res):
     ani.save('/tmp/Animation.gif',writer='imagemagick',fps=5);
 
 
-def make_ellip(l, P_l, N=16, n=1):
-    alpha = 2*pi/N*np.arange(0, N)
+def make_ellip(l, P, n=16, sigma=1):
+    """
+    
+    """
+    alpha = 2*pi/(n-2)*np.arange(1, n)
     circle = np.array([np.cos(alpha), np.sin(alpha)])
-    U, S, Vh = np.linalg.svd(P_l)
+
+    # svd decompose covariance
+    U, s, Vh = np.linalg.svd(P, full_matrices=True)
     V = Vh.T
-    d = np.sqrt(U)
-    ellip = np.dot(n, V).dot(d).dot(circle)
-    x = l[0] + ellip[0,:]
-    y = l[1] + ellip[1,:]
-    return x, y
+    d = np.sqrt(s)
+    
+    print(U, d, V)
+
+    b = np.identity(2) * d
+
+    # build ellipse: n-sigma, rotate, align circle
+    ellip = V.dot(b).dot(circle)
+
+    # center to point l
+    X = l[0] + ellip[0,:]
+    Y = l[1] + ellip[1,:]
+
+    return X, Y
 
 
 def sim_plots(res, W, params):

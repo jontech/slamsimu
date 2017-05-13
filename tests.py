@@ -76,14 +76,18 @@ class RegistrationTests(unittest.TestCase):
 class PlottingTests(unittest.TestCase):
 
   def test_ellipse_on_landmark(self):
-    l = np.array([1, 2])
-    P_l = np.array([[0.21, 0],
-                    [0, 2]])
+    L = np.array([3, 3])
 
-    x, y = make_ellip(l, P_l)
+    P = np.array([[ 2,  1],
+                  [ 1,  2]])
 
-    # plt.plot(x, y)
-    # plt.show()
+    X, Y = make_ellip(L, P)
+
+    plt.xlim((0, 5))
+    plt.ylim((0, 5))
+    plt.grid()
+    plt.plot(X, Y)
+    plt.show()
 
 
 class ObservationTests(unittest.TestCase):
