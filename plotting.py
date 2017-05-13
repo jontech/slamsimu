@@ -86,12 +86,18 @@ def sim_plots(res, W, params):
         R_ekf[:, 0], R_ekf[:, 1], 'o',
     )
 
-    for i, w in enumerate(W.T):
-        ax.annotate(i, xy=w)
+    def annotate():
+        for i, w in enumerate(W.T):
+            ax.annotate(i, xy=w)
 
-    for i, l in state.slots:
-        ax.annotate(i, xy=state.x[l])
-        #ax.plot(make_ellip(l, P_l(i)))
+        for i, l in state.slots:
+            ax.annotate(i, xy=state.x[l])
+            L = state.x[l]
+            X, Y = make_ellip(L, state.P_l(i))
+            ax.plot(X, Y, 'b')
+        return ax
+
+    ax = annotate()
 
     plt.xlim((-100, 600))
     plt.ylim((-100, 600))

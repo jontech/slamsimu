@@ -23,6 +23,9 @@ class State:
         slots = filter(lambda s: s[0] == i, self.slots)
         return np.array(list(map(lambda s: s[1], slots)))
 
+    def landmark(self, i):
+        return self.landmarks(i)[0, :]
+
     def P_l(self, i):
         """get landmark cov matrix by landmark index"""
         l = self.landmark(i)
