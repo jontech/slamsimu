@@ -48,7 +48,7 @@ def make_ellip(l, P, n=16, sigma=1):
     b = np.identity(2) * d
 
     # build ellipse: n-sigma, rotate, align circle
-    ellip = V.dot(b).dot(circle)
+    ellip = np.dot(sigma, V).dot(b.T).dot(circle)
 
     # center to point l
     X = l[0] + ellip[0,:]
@@ -93,14 +93,14 @@ def sim_plots(res, W, params):
         for i, l in state.slots:
             ax.annotate(i, xy=state.x[l])
             L = state.x[l]
-            X, Y = make_ellip(L, state.P_l(i))
+            X, Y = make_ellip(L, state.P_l(i), sigma=3)
             ax.plot(X, Y, 'b')
         return ax
     ax = annotate_landmarks()
 
     def annotate_robot():
         for state in states:
-            X, Y = make_ellip(state.R, state.P_r_pos)
+            X, Y = make_ellip(state.R, state.P_r_pos, sigma=3)
             ax.plot(X, Y, 'b')
         return ax
     ax = annotate_robot()
