@@ -184,16 +184,14 @@ def observe_landmarks(W, R, s=np.array([0, 0])):
     """
     N = W.shape[1]               # world size
     Y = np.zeros([2, N])         # init observation measurements
-    V = []
     for i in range(N):
         y, _, _ = observe(R, W[:, i])
         v = s*np.random.randn(1, 2)[0]
         y = y + v
-        V.append(v)
         # simulate sensor with angle and range
         p, fi = y
         Y[:, i] = y if p < 100 and fi > -pi/2 and fi < pi/2 else np.inf
-    return Y, np.array(V)
+    return Y
 
 
 def landmark_correction(y, l, state, S):
@@ -212,6 +210,7 @@ def landmark_correction(y, l, state, S):
     z[1] = zero_angles(z[1])
     # inovation expectation covariance with sensor noise covariance
     Z = J_ry.dot(P[np.ix_(rl, rl)]).dot(J_ry.T) + S
+
     # Kalman gain P*H'*Z^-1
     K = P[:, rl].dot(J_ry.T).dot(np.linalg.inv(Z))
 
@@ -299,7 +298,7 @@ def run(W,
         # Simulation actual robot move and observe
 
         R, _, _ = move(R, u=u)
-        Y, V = observe_landmarks(W, R, s=s)
+        Y = observe_landmarks(W, R, s=s)
 
         # Estimator (EKF)
 
@@ -315,9 +314,10 @@ def run(W,
                 if len(landmarks) > 0:
                     for l in landmarks: 
                         # correct all similar landmarks to messurement y
-                        state = landmark_correction(y, l, deepcopy(state), S)
+                        #state = landmark_correction(y, l, deepcopy(state), S)
+                        pass
                 else:
                     # new landmarks integration
                     state = landmark_creation(y, i_lw, deepcopy(state), S)
 
-        yield (R, state, n, V)
+        yield (R, state)
