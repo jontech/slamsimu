@@ -74,37 +74,36 @@ def sim_plots(res, W, params):
     fig1.suptitle("EKF-SLAM simulation steps={steps}".format(**params), fontsize=20)
     fig1.hspace = 30
 
-    ax = fig1.add_subplot(gs[:-1, :])
-    ax.grid(True)
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_title("R={R}, q={q}, s={s}".format(**params))
+    fig1.add_subplot(gs[:-1, :])
+    plt.grid(True)
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("R={R}, q={q}, s={s}".format(**params))
 
-    ax.plot(
-        R[:, 0], R[:, 1], 'o',
-        W[0, :], W[1, :], '.',
-        L[:, 0], L[:, 1], '+',
-        R_ekf[:, 0], R_ekf[:, 1], 'o',
-    )
+    plt.plot(R[:, 0], R[:, 1], 'o', label="robot")
+    plt.plot(W[0, :], W[1, :], '.', label="world point")
+    plt.plot(L[:, 0], L[:, 1], '+', label="L(x)")
+    plt.plot(R_ekf[:, 0], R_ekf[:, 1], 'o', label="R(x)")
+    plt.legend()
 
     def annotate_landmarks():
         for i, w in enumerate(W.T):
-            ax.annotate(i, xy=w)
+            plt.annotate(i, xy=w)
 
         for i, l in state.slots:
-            ax.annotate(i, xy=state.x[l])
+            plt.annotate(i, xy=state.x[l])
             L = state.x[l]
             X, Y = make_ellip(L, state.P_l(i), sigma=3)
-            ax.plot(X, Y, 'b')
-        return ax
-    ax = annotate_landmarks()
+            plt.plot(X, Y, 'b')
+
+    annotate_landmarks()
 
     def annotate_robot():
         for state in states:
             X, Y = make_ellip(state.R, state.P_r_pos, sigma=3)
-            ax.plot(X, Y, 'r')
-        return ax
-    ax = annotate_robot()
+            plt.plot(X, Y, 'r')
+
+    annotate_robot()
 
     plt.xlim((-100, 600))
     plt.ylim((-100, 600))
