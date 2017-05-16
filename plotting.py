@@ -84,7 +84,7 @@ def sim_plots(res, W, params):
     plt.plot(W[0, :], W[1, :], '.', label="world point")
     plt.plot(L[:, 0], L[:, 1], '+', label="L(x)")
     plt.plot(R_ekf[:, 0], R_ekf[:, 1], 'o', label="R(x)")
-    plt.legend()
+    plt.legend(prop={'size':12})
 
     def annotate_landmarks():
         for i, w in enumerate(W.T):
