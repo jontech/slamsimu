@@ -111,9 +111,8 @@ def move(r, u=np.array([0, 0])):
     n - motion noise, default no noise
     returns new robot odometry-like pose
     """
-    a = r[2]
     # change robot rotation a
-    a = a + u[1]
+    a = r[2] + u[1]
     a = zero_angles(a)
 
     # position increment from control signal in global frame,
@@ -233,9 +232,11 @@ def landmark_creation(y, i_y, state, S):
     r = state.r
 
     x[l], J_r, J_y = inv_observe(R, y) # global landmark pose
-    P[l, :] = J_r.dot(P[r, :])
-    P[:, l] = P[l, :].T
+
     P_rr = P[np.ix_(r, r)]
+    P_lm = J_r.dot(P[r, :])
+    P[l, :] = P_lm
+    P[:, l] = P_lm.T
     P[np.ix_(l, l)] = J_r.dot(P_rr).dot(J_r.T) + J_y.dot(S).dot(J_y.T)
 
     state.x = x
@@ -251,8 +252,9 @@ def update_robot(state, Q, x_r, J_r, J_n):
 
     x[r] = x_r
     P_rr = P[np.ix_(r, r)]
-    P[r, :] = J_r.dot(P[r, :])
-    P[:, r] = P[r, :].T
+    P_rm = J_r.dot(P[r, :])
+    P[r, :] = P_rm
+    P[:, r] = P_rm.T
     P[np.ix_(r, r)] = J_r.dot(P_rr).dot(J_r.T) + J_n.dot(Q).dot(J_n.T)
 
     state.x = x
@@ -304,7 +306,7 @@ def run(W,
 
         # robot move prediction
         n = q*np.random.randn(1, 2)[0]
-        x_r, J_r, J_n = move(state.R, u=u+n)
+        x_r, J_r, J_n = move(state.R, u=u+n)  # u odometry vector
 
         state = update_robot(deepcopy(state), Q, x_r, J_r, J_n)
 
